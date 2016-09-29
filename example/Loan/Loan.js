@@ -1,7 +1,7 @@
 var Item = require("../../lib/item");
 var joi = require('joi');
 var async = require('async');
-/* Hooks would get defined in this file I think */
+/* Hooks which operate using extensions could be defined in this file. */
 class Loan extends Item {
     constructor(json) {
         super({
