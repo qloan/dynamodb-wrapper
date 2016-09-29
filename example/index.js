@@ -1,8 +1,11 @@
+// This is completely untested. Just a proposed API example
+var async = require("async");
 var Loan = require("./Loan");
 var instanceOfLoan = new Loan({
     loanId: 1,
     foo: "abc"
 });
+var LoanTable = require("Loan/LoanTable");
 async.series([
     (next) => {
         instanceOfLoan.create(next);   
@@ -11,8 +14,7 @@ async.series([
         instanceOfLoan.set("foo", "bar");
         instanceOfLoan.update(next);
     }
-])
-instanceOfLoan.create(fun)
+]);
 async.series([
     function(next) {
         Loan.create({
