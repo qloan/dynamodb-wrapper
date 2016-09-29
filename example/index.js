@@ -42,6 +42,10 @@ async.series([
         loanInstance.set("foo", loanInstance.getFoo());
         loanInstance.update(next);
     },
+    function(next) {
+        // Example of augmented function
+        loanInstance.delete(next);
+    },
 ], (err) => {
     if(err) {
         console.error(err);

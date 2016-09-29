@@ -1,6 +1,17 @@
-/* Put the schema in its own file because it gets huge */
 var joi = require("joi");
-module.exports = {
-    loanId: joi.string().required(),
-    foo: joi.string().required()
-};
+var Schema = require('../../lib/schema')({
+    region: 'us-west-2'
+});
+
+/* Hooks which operate on the plain json of the items would be defined in this file */
+
+module.exports = new Schema({
+    tableName: 'dev-dsmith11-loans',
+    key: {
+        hash: 'loanId'
+    },
+    schema: {
+        loanId: joi.string().required(),
+        foo: joi.string().required()
+    }
+});
