@@ -38,7 +38,7 @@ async.series([
         });
     },
     function(next) {
-        loanInstance.set("foo", "def");
+        loanInstance.set("foo", loanInstance.getFoo());
         loanInstance.update(next);
     },
 ], (err) => {
