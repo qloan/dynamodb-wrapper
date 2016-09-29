@@ -1,5 +1,5 @@
 var joi = require("joi");
-var Schema = require('../../lib/schema')({
+var Schema = require('../../lib').schema({
     region: 'us-west-2'
 });
 
@@ -11,7 +11,7 @@ module.exports = new Schema({
         hash: 'loanId'
     },
     schema: {
-        loanId: joi.string().required(),
-        foo: joi.string().required()
+        loanId : joi.string().required(),
+        foo    : joi.string().required()
     }
 });

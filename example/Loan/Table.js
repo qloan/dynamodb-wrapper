@@ -1,7 +1,7 @@
-var Table = require("../../lib/table");
+var Table = require("../../lib/").table;
 
 /* require this file if you need get, scan, or query */
 module.exports = new Table({
-    schema: require("./Schema"),
-    itemConstructor: require("./Instance")
+    schema          : require("./Schema"),
+    itemConstructor : require("./Item")
 });

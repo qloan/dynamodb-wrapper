@@ -2,7 +2,7 @@
 
 /* This is an example of using the Loan object by itself. We would probably only do this in the onboard route. */
 var async = require("async");
-var Loan = require("./Loan/Instance");
+var Loan = require("./Loan/Item");
 var instanceOfLoan = new Loan({
     loanId: "1",
     foo: "abc"
