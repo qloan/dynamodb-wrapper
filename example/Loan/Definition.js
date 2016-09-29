@@ -1,4 +1,4 @@
-var DB = require('./lib')({
+var DB = require('../../lib')({
     region: 'us-west-2'
 });
 
