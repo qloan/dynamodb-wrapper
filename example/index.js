@@ -16,6 +16,7 @@ async.series([
         instanceOfLoan.update(next);
     }
 ], (err) => {
+    console.log(err);
 });
 
 /* This is an example of using the LoanTable object */
@@ -47,7 +48,5 @@ async.series([
         loanInstance.delete(next);
     },
 ], (err) => {
-    if(err) {
-        console.error(err);
-    }
+    console.error(err);
 });
