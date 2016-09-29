@@ -1,11 +1,12 @@
 // This is completely untested. Just a proposed API example
+
+/* This is an example of using the Loan object by itself. We would probably only do this in the onboard route. */
 var async = require("async");
-var Loan = require("./Loan");
+var Loan = require("./Loan/Instance");
 var instanceOfLoan = new Loan({
     loanId: 1,
     foo: "abc"
 });
-var LoanTable = require("Loan/LoanTable");
 async.series([
     (next) => {
         instanceOfLoan.create(next);   
@@ -15,85 +16,28 @@ async.series([
         instanceOfLoan.update(next);
     }
 ]);
+
+/* This is an example of using the LoanTable object */
+var LoanTable = require("./Loan/Table");
+var loanInstance;
 async.series([
     function(next) {
-        Loan.create({
-            loanId : '91919',
-            foo    : 'YYYYY' 
-        }, function(err, data) {
-            if(err) {
+        LoanTable.get({
+            loanId: "5"
+        }, function(err, _loanInstance) {
+            if (err) {
                 return next(err);
             }
-            console.log('Added rec...');
-            //console.dir(data);
-            next();
+            _loanInstance = loanInstance;
         });
     },
     function(next) {
-        Loan.get({
-            loanId: '91919'
-        }, (err, data) => {
-            if(err) {
-                return next(err);
-            }
-            console.log('Got rec...');
-            console.dir(data);
-            next();
-        });
+        loanInstance.set("foo", "bar");
+        loanInstance.update(next);
     },
     function(next) {
-        Loan.query({
-            KeyConditionExpression: 'loanId = :val',
-            ExpressionAttributeValues: {
-                ':val': '1'
-            }
-        }, (err, data) => {
-            if(err) {
-                return next(err);
-            }
-            console.log('Ran query...');
-            console.dir(data, {depth: 3, colors: true});
-            next();
-        });
+        loanInstance.delete(next);
     },
-    function(next) {
-        function doScan(lastEvaluatedKey) {
-            let params = {
-                FilterExpression: 'statusCode = :statusCode',
-                ExpressionAttributeValues: {
-                    ':statusCode': 200
-                }
-            };
-            if(lastEvaluatedKey) {
-                params.ExclusiveStartKey = lastEvaluatedKey;
-            }
-            Loan.scan(params, (err, data) => {
-                if(err) {
-                    return next(err);
-                }
-                console.log('Ran scan...');
-                console.dir(data, {depth: 3, colors: true});
-                if(typeof data.LastEvaluatedKey != "undefined") {
-                    doScan(data.LastEvaluatedKey);
-                }else {
-                    next();
-                }
-            });
-        }
-        doScan();
-    },
-    function(next) {
-        Loan.delete({
-            loanId: '91919'
-        }, (err, data) => {
-            if(err) {
-                return next(err);
-            }
-            console.log('Deleted rec...');
-            console.dir(data);
-            next();
-        });
-    }
 ], (err) => {
     if(err) {
         console.error(err);

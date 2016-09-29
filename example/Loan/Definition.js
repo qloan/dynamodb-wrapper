@@ -9,5 +9,5 @@ module.exports = new DB({
     key: {
         hash: 'loanId'
     },
-    schema: require("./schema")
+    schema: require("./Schema")
 });

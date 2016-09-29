@@ -8,7 +8,7 @@ class LoanInstance extends Item {
     constructor(json) {
         super({
             attrs: json,
-            model: require("./TableDefinition")
+            model: require("./Definition")
         });
     }
     // Extensions are just functions
