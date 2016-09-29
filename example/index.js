@@ -38,6 +38,7 @@ async.series([
         });
     },
     function(next) {
+        // Example of augmented function
         loanInstance.set("foo", loanInstance.getFoo());
         loanInstance.update(next);
     },
