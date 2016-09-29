@@ -1,4 +1,18 @@
-
+var Loan = require("./Loan");
+var instanceOfLoan = new Loan({
+    loanId: 1,
+    foo: "abc"
+});
+async.series([
+    (next) => {
+        instanceOfLoan.create(next);   
+    },
+    (next) => {
+        instanceOfLoan.set("foo", "bar");
+        instanceOfLoan.update(next);
+    }
+])
+instanceOfLoan.create(fun)
 async.series([
     function(next) {
         Loan.create({
