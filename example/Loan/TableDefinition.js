@@ -3,14 +3,11 @@ var DB = require('./lib')({
 });
 
 /* Hooks which operate on the plain json of the items would be defined in this file */
-var dbObject = new DB({
+
+module.exports = new DB({
     tableName: 'dev-dsmith11-loans',
     key: {
         hash: 'loanId'
     },
     schema: require("./schema")
 });
-
-module.exports = function() {
-    return dbObject;
-};
