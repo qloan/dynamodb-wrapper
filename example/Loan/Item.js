@@ -1,4 +1,4 @@
-var Item = require("../../lib/item");
+var Item = require("../../lib").item;
 var joi = require('joi');
 var async = require('async');
 
