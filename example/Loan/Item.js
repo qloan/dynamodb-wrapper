@@ -4,7 +4,7 @@ var async = require('async');
 
 /* require this file if you already have the json of the database item (So basically in the onboard route only, when we create the loan object) */
 /* Hooks which operate using extensions could be defined in this file. */
-class LoanInstance extends Item {
+class LoanItem extends Item {
     constructor(json) {
         super({
             attrs: json,
@@ -17,4 +17,4 @@ class LoanInstance extends Item {
     }
 }
 
-module.exports = LoanInstance;
+module.exports = LoanItem;
