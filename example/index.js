@@ -5,7 +5,10 @@ var async = require("async");
 var Loan = require("./Loan/Item");
 var instanceOfLoan = new Loan({
     loanId: "1",
-    foo: "abc"
+    foo: "abc",
+    personalInformation: {
+        firstName: 'Haig'
+    }
 });
 async.series([
     (next) => {
@@ -13,6 +16,7 @@ async.series([
     },
     (next) => {
         instanceOfLoan.set("foo", "bar");
+        //instanceOfLoan.set("personalInformation.firstName", "Haig");
         instanceOfLoan.update(next);
     }
 ], (err) => {
@@ -42,6 +46,33 @@ async.series([
         // Example of augmented function
         loanInstance.set("foo", loanInstance.getFoo());
         loanInstance.update(next);
+    },
+    function(next) {
+        function doScan(lastEvaluatedKey) {
+            let params = {
+
+                FilterExpression: 'statusCode = :statusCode',
+                ExpressionAttributeValues: {
+                    ':statusCode': 200
+                }
+            };
+            if(lastEvaluatedKey) {
+                params.ExclusiveStartKey = lastEvaluatedKey;
+            }
+            LoanTable.scan(params, (err, data) => {
+                if(err) {
+                    return next(err);
+                }
+                console.log('Ran scan...');
+                console.dir(data, {depth: 3, colors: true});
+                if(typeof data.LastEvaluatedKey != "undefined") {
+                    doScan(data.LastEvaluatedKey);
+                }else {
+                    next();
+                }
+            });
+        }
+        doScan();
     },
     function(next) {
         // Example of augmented function
