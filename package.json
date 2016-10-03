@@ -24,6 +24,7 @@
   "homepage": "https://github.com/qloan/dynamodb-wrapper#readme",
   "devDependencies": {
     "chai": "3.5.0",
+    "chai-spies": "0.7.1",
     "mocha": "3.1.0",
     "sinon": "1.17.6"
   }
