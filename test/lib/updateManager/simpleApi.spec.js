@@ -1,4 +1,4 @@
-var UpdateManager = require("lib/UpdateManager");
+var UpdateManager = require("lib/updateManager");
 var assert = require("chai").assert;
 var expect = require("chai").expect;
 var sinon = require("sinon");
