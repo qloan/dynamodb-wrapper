@@ -2,7 +2,7 @@
 
 /* This is an example of using the Loan object by itself. We would probably only do this in the onboard route. */
 var async = require("async");
-var Loan = require("./Loan/Item");
+var Loan = require("./loan/item");
 var instanceOfLoan = new Loan({
     loanId: "1",
     foo: "abc",
@@ -24,7 +24,7 @@ async.series([
 });
 
 /* This is an example of using the LoanTable object */
-var LoanTable = require("./Loan/Table");
+var LoanTable = require("./loan/table");
 var loanInstance;
 async.series([
     function(next) {

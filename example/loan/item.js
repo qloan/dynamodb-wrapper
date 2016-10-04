@@ -8,7 +8,7 @@ class LoanItem extends Item {
     constructor(json) {
         super({
             attrs: json,
-            schema: require("./Schema")
+            schema: require("./schema")
         });
     }
     // Extensions are just functions

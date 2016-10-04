@@ -1,4 +1,4 @@
-const Observable = require('./observable');
+const Observable = require('lib/util/observable');
 const async      = require('async');
 const chai       = require('chai');
 const spies      = require('chai-spies');
