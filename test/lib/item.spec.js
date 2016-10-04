@@ -16,7 +16,9 @@ describe('Item::', function() {
 
     beforeEach(function() {
         sandbox = sinon.sandbox.create();
-        mockSchema = {};
+        mockSchema = {
+            timestamps: true
+        };
         mockSchema.create = function() {};
         createStub = sandbox.stub(mockSchema, "create");
         createStub.callsArg(1);
@@ -121,6 +123,7 @@ describe('Item::', function() {
                 assert(!err);
                 expect(rec.uniqueReference).to.equal(uniqueReference);
                 expect(rec.get("personalInformation.firstName")).to.equal("__MODIFIED");
+                expect(rec.get("createdAt")).to.exist;
                 return done();
             });
         });
@@ -147,6 +150,8 @@ describe('Item::', function() {
                 assert(!err);
                 expect(rec.uniqueReference).to.equal(uniqueReference);
                 expect(rec.get("personalInformation.firstName")).to.equal("__MODIFIED");
+                expect(rec.get("updatedAt")).to.exist;
+
                 return done();
             });
         });
