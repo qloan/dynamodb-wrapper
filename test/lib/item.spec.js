@@ -1,5 +1,5 @@
 let async = require("async");
-const DB       = require('.');
+const DB       = require('lib');
 const chai     = require('chai');
 const expect   = chai.expect;
 const assert   = chai.assert;

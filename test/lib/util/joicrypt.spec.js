@@ -1,4 +1,4 @@
-const joi    = require('./joicrypt');
+const joi    = require('lib/util/joicrypt');
 const chai   = require('chai');
 const expect = chai.expect;
 const assert = chai.assert;

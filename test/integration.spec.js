@@ -1,4 +1,4 @@
-const DB       = require('.');
+const DB       = require('lib');
 const AWS      = require('aws-sdk');
 const async    = require('async');
 const chai     = require('chai');
@@ -171,6 +171,24 @@ describe('Table', function() {
                 return done();
             });
         });
+        it('Items JSON values are reset', (done) => {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+
+            rec.create((err) => {
+                assert(!err);
+                expect(rec.get("foo")).to.equal("abc");
+                return done();
+            });
+            rec.set("foo", "WILL_GET_OVERWRITTEN");
+        });
     });
 
     describe("Update", function() {
@@ -278,29 +296,26 @@ describe('Table', function() {
                     firstName: 'John'
                 }
             });
-            rec.set("foo", "NOT_SAVED_TO_DB");
             async.series([
                 (next) => {
                     rec.create(next);
                 },
                 (next) => {
                     testTable.query({
-                        Key: {
-                            hashKey: id
-                        },
-                        KeyConditionExpression: "foo = :TOKEN1",
+                        KeyConditionExpression: "hashKey = :TOKEN1 AND rangeKey = :TOKEN2",
                         ExpressionAttributeValues: {
-                            ":TOKEN1": "abc"
+                            ":TOKEN1": id,
+                            ":TOKEN2": "2"
                         }
-                    }, next);
-                },
-                (retrievedItems, next) => {
-                    expect(querySpy.args[0][0].TableName).to.equal(tableName);
-                    expect(querySpy.args[0][0].hashKey).to.equal(id);
-                    expect(retrievedItems[0].get("foo")).to.equal("NOT_SAVED_TO_DB");
-                    assert(retrievedItems[0].extensionWorks());
+                    },  (err, retrievedItems) => {
+                        assert(!err);
+                        expect(querySpy.args[0][0].TableName).to.equal(tableName);
+                        expect(retrievedItems.Items[0].get("foo")).to.equal("abc");
+                        assert(retrievedItems.Items[0].extensionWorks());
+                        return next();
+                    });
                 }
-            ], done)
+            ], done);
         });
     });
 
@@ -315,25 +330,56 @@ describe('Table', function() {
                     firstName: 'John'
                 }
             });
-            rec.set("foo", "NOT_SAVED_TO_DB");
             async.series([
                 (next) => {
                     rec.create(next);
                 },
                 (next) => {
                     testTable.scan({
-                        KeyConditionExpression: "foo = :TOKEN1",
+                        FilterExpression: "foo = :TOKEN1",
                         ExpressionAttributeValues: {
                             ":TOKEN1": "UNIQUE_FOO"
                         }
-                    }, next);
-                },
-                (retrievedItems, next) => {
-                    expect(scanSpy.args[0][0].TableName).to.equal(tableName);
-                    expect(retrievedItems[0].get("hashKey")).to.equal(id);
-                    assert(retrievedItems[0].extensionWorks());
+                    }, function(err, retrievedItems) {
+                        assert(!err);
+                        expect(scanSpy.args[0][0].TableName).to.equal(tableName);
+                        expect(retrievedItems.Items[0].get("foo")).to.equal("UNIQUE_FOO");
+                        assert(retrievedItems.Items[0].extensionWorks());
+                        return next();
+                    });
                 }
-            ], done)
+            ], done);
+        });
+    });
+
+    describe("Get", function() {
+        it('Working example', (done) => {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            async.series([
+                (next) => {
+                    rec.create(next);
+                },
+                (next) => {
+                    testTable.get({
+                        "hashKey": id,
+                        "rangeKey": "2"
+                    }, function(err, retrievedItem) {
+                        assert(!err);
+                        expect(getSpy.args[0][0].TableName).to.equal(tableName);
+                        expect(retrievedItem.get("foo")).to.equal("abc");
+                        assert(retrievedItem.extensionWorks());
+                        return next();
+                    });
+                }
+            ], done);
         });
     });
 });
