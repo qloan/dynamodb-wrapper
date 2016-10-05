@@ -49,6 +49,25 @@ describe('Item::', function() {
         sandbox.restore();
     });
 
+    describe("extend", function() {
+        it("Should let you add functions with extend", function() {
+            let rec = new TestTableItem({
+                hashKey  : "1",
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.extend("x", {
+                a: function() {
+                    return this.get("foo");
+                }
+            });
+            expect(rec.x.a()).to.equal("abc");
+        });
+    });
+
     describe("combination", function() {
         it("Should work after set/create/set/update/set", function(done) {
             let id = getUniqueId();
