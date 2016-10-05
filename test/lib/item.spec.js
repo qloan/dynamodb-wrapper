@@ -13,21 +13,14 @@ describe('Item::', function() {
     let createStub;
     let updateStub;
     let deleteStub;
+    let rec;
+    let id;
 
     beforeEach(function() {
         sandbox = sinon.sandbox.create();
         mockSchema = {
             timestamps: true
         };
-        mockSchema.create = function() {};
-        createStub = sandbox.stub(mockSchema, "create");
-        createStub.callsArg(1);
-        mockSchema.update = function() {};
-        updateStub = sandbox.stub(mockSchema, "update");
-        updateStub.callsArg(2);
-        mockSchema.delete = function() {};
-        deleteStub = sandbox.stub(mockSchema, "delete");
-        deleteStub.callsArg(1);
         class TableItem extends Item {
             constructor(json) {
                 super({
@@ -43,6 +36,25 @@ describe('Item::', function() {
             }
         }
         TestTableItem = TableItem;
+        id = getUniqueId();
+        rec = new TestTableItem({
+            hashKey  : id,
+            rangeKey : "2",
+            foo : "abc",
+            personalInformation: {
+                firstName: 'John'
+            }
+        });
+        mockSchema.create = function() {};
+        createStub = sandbox.stub(mockSchema, "create");
+        createStub.callsArg(1);
+        mockSchema.update = function() {};
+        updateStub = sandbox.stub(mockSchema, "update", function(itemJson, updateParams, callback) {
+            return callback(null, rec.get());
+        });
+        mockSchema.delete = function() {};
+        deleteStub = sandbox.stub(mockSchema, "delete");
+        deleteStub.callsArg(1);
     });
 
     afterEach(function() {
@@ -70,15 +82,6 @@ describe('Item::', function() {
 
     describe("combination", function() {
         it("Should work after set/create/set/update/set", function(done) {
-            let id = getUniqueId();
-            let rec = new TestTableItem({
-                hashKey  : id,
-                rangeKey : "2",
-                foo : "abc",
-                personalInformation: {
-                    firstName: 'John'
-                }
-            });
             async.series([
                 (next) => {
                     rec.set("rangeKey", 3);
@@ -103,15 +106,6 @@ describe('Item::', function() {
 
     describe("get", function() {
         it('Should be able to retain fields that were previously set', (done) => {
-            let id = getUniqueId();
-            let rec = new TestTableItem({
-                hashKey  : id,
-                rangeKey : "2",
-                foo : "abc",
-                personalInformation: {
-                    firstName: 'John'
-                }
-            });
 
             rec.set("personalInformation.firstName", "__MODIFIED");
             expect(rec.get("personalInformation.firstName")).to.equal("__MODIFIED");
@@ -123,16 +117,6 @@ describe('Item::', function() {
 
     describe("create", function() {
         it('Should be the same rec before and after create', (done) => {
-            let id = getUniqueId();
-            let rec = new TestTableItem({
-                hashKey  : id,
-                rangeKey : "2",
-                foo : "abc",
-                personalInformation: {
-                    firstName: 'John'
-                }
-            });
-
 
             let uniqueReference = {a: true};
             rec.uniqueReference = uniqueReference;
@@ -150,16 +134,6 @@ describe('Item::', function() {
 
     describe("Update", function() {
         it('Should be the same rec before and after update', (done) => {
-            let id = getUniqueId();
-            let rec = new TestTableItem({
-                hashKey  : id,
-                rangeKey : "2",
-                foo : "abc",
-                personalInformation: {
-                    firstName: 'John'
-                }
-            });
-
 
             let uniqueReference = {a: true};
             rec.uniqueReference = uniqueReference;
@@ -178,16 +152,6 @@ describe('Item::', function() {
 
     describe("Add", function() {
         it('Should work', (done) => {
-            let id = getUniqueId();
-            let rec = new TestTableItem({
-                hashKey  : id,
-                rangeKey : "2",
-                foo : "abc",
-                personalInformation: {
-                    firstName: 'John'
-                }
-            });
-
             rec.add("rangeKey", "1");
 
             rec.update((err) => {
@@ -200,16 +164,7 @@ describe('Item::', function() {
 
     describe("Append", function() {
         it('Should work', (done) => {
-            let id = getUniqueId();
-            let rec = new TestTableItem({
-                hashKey  : id,
-                rangeKey : "2",
-                foo : [],
-                personalInformation: {
-                    firstName: 'John'
-                }
-            });
-
+            rec.set("foo", []);
             rec.append("foo", "1");
 
             rec.update((err) => {
@@ -222,16 +177,6 @@ describe('Item::', function() {
 
     describe("Remove", function() {
         it('Should work', (done) => {
-            let id = getUniqueId();
-            let rec = new TestTableItem({
-                hashKey  : id,
-                rangeKey : "2",
-                foo : "abc",
-                personalInformation: {
-                    firstName: 'John'
-                }
-            });
-
             rec.remove("foo");
 
             rec.update((err) => {
