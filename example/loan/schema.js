@@ -7,7 +7,7 @@ let LoanSchema = DB.schema({
 /* Hooks which operate on the plain json of the items would be defined in this file */
 
 var schema = new LoanSchema({
-    tableName: 'dev-dsmith11-loans',
+    tableName: process.env.ENV_NAME + '-test',
     key: {
         hash: 'loanId'
     },
@@ -18,7 +18,28 @@ var schema = new LoanSchema({
             lastName  : joi.string().encrypt()
         }),
         foo    : joi.string().required()
+    },
+    tableDefinition: {
+        TableName: process.env.ENV_NAME + '-test',
+        AttributeDefinitions: [{
+            AttributeName: 'loanId',
+            AttributeType: 'S'
+        }],
+        KeySchema: [{
+            AttributeName: 'loanId',
+            KeyType: 'HASH'
+        }],
+        ProvisionedThroughput: {
+            ReadCapacityUnits: 3,
+            WriteCapacityUnits: 3
+        }
     }
+});
+
+schema.on('tableCreated', (tableName, err, data, cb) => {
+    console.log('Created ' + tableName + '!');
+    console.dir(err);
+    console.dir(data);
 });
 
 schema.on('encrypt', (rawObj, encryptedFields, cb) => {
