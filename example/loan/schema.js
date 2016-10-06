@@ -36,8 +36,8 @@ var schema = new LoanSchema({
     }
 });
 
-schema.on('tableCreated', (tableName, err, data, cb) => {
-    console.log('Created ' + tableName + '!');
+schema.on('tableExists', (err, tableName, data, cb) => {
+    console.log('Table \'' + tableName + '\' exists!');
     console.dir(err);
     console.dir(data);
 });
