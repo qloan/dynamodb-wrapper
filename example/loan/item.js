@@ -10,7 +10,7 @@ class LoanItem extends Item {
             attrs: json,
             schema: require("./schema")
         });
-        this.extend("bankAccount", require("extensions/bankAccount"));
+        this.extend("bankAccount", require("./extensions/bankAccount"));
     }
     // Extensions are just functions
     getFoo(foo) {
