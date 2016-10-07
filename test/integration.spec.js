@@ -171,6 +171,15 @@ describe('Table', function() {
                 return done();
             });
         });
+        it("No attributes", function(done) {
+            let rec = new TestTableItem();
+
+            rec.create((err) => {
+                assert(err);
+                assert(!putSpy.called);
+                return done();
+            });
+        });
         it('Items JSON values are reset', (done) => {
             var id = getUniqueId();
             let rec = new TestTableItem({
