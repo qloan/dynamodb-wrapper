@@ -215,10 +215,11 @@ describe("UpdateManager", function() {
                 updateManager.set("a", "5");
                 updateManager.add("a", "2");
                 var updateExpression = updateManager.getDynamoUpdateExpression();
-                expect(updateExpression.UpdateExpression).to.match(new RegExp(`.*SET a = ${token},a = a [\+] ${token}`));
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`.*SET a = ${token},a = if_not_exists [\(] a , ${token} [\)] [\+] ${token}`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
                     ":TOKEN_1": "5",
-                    ":TOKEN_2": "2"
+                    ":TOKEN_2": 0,
+                    ":TOKEN_3": "2"
                 });
             });
             it("Should work with set/add/remove/add", function() {
@@ -227,29 +228,33 @@ describe("UpdateManager", function() {
                 updateManager.remove("a");
                 updateManager.add("a", "3");
                 var updateExpression = updateManager.getDynamoUpdateExpression();
-                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = ${token},a = a [\+] ${token},a = a [\+] ${token} REMOVE a`));
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = ${token},a = if_not_exists [\(] a , ${token} [\)] [\+] ${token},a = if_not_exists [\(] a , ${token} [\)] [\+] ${token} REMOVE a`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
                     ":TOKEN_1": "1",
-                    ":TOKEN_2": "2",
-                    ":TOKEN_3": "3"
+                    ":TOKEN_2": 0,
+                    ":TOKEN_3": "2",
+                    ":TOKEN_4": 0,
+                    ":TOKEN_5": "3"
                 });
             });
             it("Should work with remove/add", function() {
                 updateManager.remove("a");
                 updateManager.add("a", "3");
                 var updateExpression = updateManager.getDynamoUpdateExpression();
-                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = a [\+] ${token} REMOVE a`));
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = if_not_exists [\(] a , ${token} [\)] [\+] ${token} REMOVE a`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": "3"
+                    ":TOKEN_1": 0,
+                    ":TOKEN_2": "3"
                 });
             });
             it("Should work with remove/append", function() {
                 updateManager.remove("a");
                 updateManager.append("a", 3);
                 var updateExpression = updateManager.getDynamoUpdateExpression();
-                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = list_append[\(]a , ${token}[\)] REMOVE a`));
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = list_append [\(] if_not_exists [\(] a , ${token} [\)] , ${token}[\)] REMOVE a`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": 3
+                    ":TOKEN_1": [],
+                    ":TOKEN_2": [3]
                 });
             });
             it("Empty Expression", function() {
@@ -274,9 +279,10 @@ describe("UpdateManager", function() {
                 updateManager._updateJson(json);
                 updateManager.add("d.g.h.e.d", 6);
                 var updateExpression = updateManager.getDynamoUpdateExpression();
-                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET d\.g\.h\.e\.d = d\.g\.h\.e\.d [\+] ${token}`));
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET d\.g\.h\.e\.d = if_not_exists [\(] d\.g\.h\.e\.d , ${token} [\)] [\+] ${token}`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": 6
+                    ":TOKEN_1": 0,
+                    ":TOKEN_2": 6
                 });
             });
         });
@@ -286,9 +292,10 @@ describe("UpdateManager", function() {
                 updateManager._updateJson(json);
                 updateManager.append("c.d", 6);
                 var updateExpression = updateManager.getDynamoUpdateExpression();
-                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET c\.d = list_append[\(]c\.d , ${token}[\)]`));
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET c\.d = list_append [\(] if_not_exists [\(] c\.d , ${token} [\)] , ${token}[\)]`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": 6
+                    ":TOKEN_1": [],
+                    ":TOKEN_2": [6]
                 });
             });
         });
