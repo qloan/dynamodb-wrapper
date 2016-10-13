@@ -98,7 +98,8 @@ describe('Table', function() {
                     lastName  : joi.string().encrypt()
                 }),
                 zzzz: joi.number(),
-                foo    : joi.string().required()
+                foo    : joi.string().required(),
+                arr: joi.array()
             }
         });
         class TableItem extends Item {
@@ -235,6 +236,124 @@ describe('Table', function() {
                     next();
                 }
             ], done);
+        });
+        describe("Append", function() {
+            it("Should work with empty array", function(done) {
+                var id = getUniqueId();
+                let rec = new TestTableItem({
+                    hashKey  : id,
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    },
+                    arr: []
+                });
+
+                var uniqueReference = {a: true};
+                async.series([
+                    (next) => {
+                        rec.create(next);
+                    },
+                    (next) => {
+                        rec.append("arr", "Jeff");
+                        rec.uniqueReference = uniqueReference;
+                        rec.update(next);
+                    },
+                    (next) => {
+                        expect(rec.get("arr")).to.deep.equal(["Jeff"]);
+                        expect(rec.uniqueReference).to.equal(uniqueReference);
+                        next();
+                    }
+                ], done);
+            });
+            it("Should work with non-existent field", function(done) {
+                var id = getUniqueId();
+                let rec = new TestTableItem({
+                    hashKey  : id,
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    }
+                });
+
+                var uniqueReference = {a: true};
+                async.series([
+                    (next) => {
+                        rec.create(next);
+                    },
+                    (next) => {
+                        rec.append("arr", "Jeff");
+                        rec.uniqueReference = uniqueReference;
+                        rec.update(next);
+                    },
+                    (next) => {
+                        expect(rec.get("arr")).to.deep.equal(["Jeff"]);
+                        expect(rec.uniqueReference).to.equal(uniqueReference);
+                        next();
+                    }
+                ], done);
+            });
+        });
+        describe("Add", function() {
+            it("Should work with empty array", function(done) {
+                var id = getUniqueId();
+                let rec = new TestTableItem({
+                    hashKey  : id,
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    },
+                    zzzz: 0
+                });
+
+                var uniqueReference = {a: true};
+                async.series([
+                    (next) => {
+                        rec.create(next);
+                    },
+                    (next) => {
+                        rec.add("zzzz", 1);
+                        rec.uniqueReference = uniqueReference;
+                        rec.update(next);
+                    },
+                    (next) => {
+                        expect(rec.get("zzzz")).to.equal(1);
+                        expect(rec.uniqueReference).to.equal(uniqueReference);
+                        next();
+                    }
+                ], done);
+            });
+            it("Should work with non-existent field", function(done) {
+                var id = getUniqueId();
+                let rec = new TestTableItem({
+                    hashKey  : id,
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    }
+                });
+
+                var uniqueReference = {a: true};
+                async.series([
+                    (next) => {
+                        rec.create(next);
+                    },
+                    (next) => {
+                        rec.add("zzzz", 1);
+                        rec.uniqueReference = uniqueReference;
+                        rec.update(next);
+                    },
+                    (next) => {
+                        expect(rec.get("zzzz")).to.equal(1);
+                        expect(rec.uniqueReference).to.equal(uniqueReference);
+                        next();
+                    }
+                ], done);
+            });
         });
         it('Failure to validate', (done) => {
             var id = getUniqueId();
