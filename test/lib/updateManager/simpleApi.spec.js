@@ -207,8 +207,16 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = ${token},a = ${token}`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": "__NEW_VALUE_1",
-                    ":TOKEN_2": "__NEW_VALUE_2"
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a",
+                        "value"  : "__NEW_VALUE_1"
+                    },
+                    ":TOKEN_2": {
+                        "action": "SET",
+                        "field" : "a",
+                        "value" : "__NEW_VALUE_2"
+                    }
                 });
             });
             it("Should work with add/set", function() {
@@ -217,9 +225,19 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`.*SET a = ${token},a = if_not_exists [\(] a , ${token} [\)] [\+] ${token}`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": "5",
-                    ":TOKEN_2": 0,
-                    ":TOKEN_3": "2"
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a",
+                        "value"  : "5"
+                    },
+                    ":TOKEN_2": {
+                        "value" : 0
+                    },
+                    ":TOKEN_3": {
+                        "action" : "ADD",
+                        "field"  : "a",
+                        "value"  : "2"
+                    }
                 });
             });
             it("Should work with set/add/remove/add", function() {
@@ -230,11 +248,27 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = ${token},a = if_not_exists [\(] a , ${token} [\)] [\+] ${token},a = if_not_exists [\(] a , ${token} [\)] [\+] ${token} REMOVE a`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": "1",
-                    ":TOKEN_2": 0,
-                    ":TOKEN_3": "2",
-                    ":TOKEN_4": 0,
-                    ":TOKEN_5": "3"
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a",
+                        "value"  : "1"
+                    },
+                    ":TOKEN_2": {
+                        "value" : 0
+                    },
+                    ":TOKEN_3": {
+                        "action": "ADD",
+                        "field"  : "a",
+                        "value"  : "2"
+                    },
+                    ":TOKEN_4": {
+                        "value" : 0
+                    },
+                    ":TOKEN_5": {
+                        "action": "ADD",
+                        "field"  : "a",
+                        "value"  : "3"
+                    }
                 });
             });
             it("Should work with remove/add", function() {
@@ -243,8 +277,14 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = if_not_exists [\(] a , ${token} [\)] [\+] ${token} REMOVE a`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": 0,
-                    ":TOKEN_2": "3"
+                    ":TOKEN_1": {
+                        "value": 0
+                    },
+                    ":TOKEN_2": {
+                        "action": "ADD",
+                        "field"  : "a",
+                        "value"  : "3"
+                    }
                 });
             });
             it("Should work with remove/append", function() {
@@ -253,8 +293,14 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = list_append [\(] if_not_exists [\(] a , ${token} [\)] , ${token}[\)] REMOVE a`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": [],
-                    ":TOKEN_2": [3]
+                    ":TOKEN_1": {
+                        "value": []
+                    },
+                    ":TOKEN_2": {
+                        "action": "APPEND",
+                        "field"  : "a",
+                        "value"  : [3]
+                    }
                 });
             });
             it("Empty Expression", function() {
@@ -269,7 +315,11 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a = ${token}`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": "__NEW_VALUE"
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a",
+                        "value"  : "__NEW_VALUE"
+                    }
                 });
             });
         });
@@ -281,8 +331,14 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET d\.g\.h\.e\.d = if_not_exists [\(] d\.g\.h\.e\.d , ${token} [\)] [\+] ${token}`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": 0,
-                    ":TOKEN_2": 6
+                    ":TOKEN_1": {
+                        "value": 0
+                    },
+                    ":TOKEN_2": {
+                        "action": "ADD",
+                        "field"  : "d.g.h.e.d",
+                        "value"  : 6
+                    }
                 });
             });
         });
@@ -294,8 +350,14 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET c\.d = list_append [\(] if_not_exists [\(] c\.d , ${token} [\)] , ${token}[\)]`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
-                    ":TOKEN_1": [],
-                    ":TOKEN_2": [6]
+                    ":TOKEN_1": {
+                        "value": []
+                    },
+                    ":TOKEN_2": {
+                        "action": "APPEND",
+                        "field"  : "c.d",
+                        "value"  : [6]
+                    }
                 });
             });
         });
