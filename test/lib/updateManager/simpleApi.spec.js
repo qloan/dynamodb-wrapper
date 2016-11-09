@@ -2,7 +2,7 @@ var UpdateManager = require("lib/updateManager");
 var assert = require("chai").assert;
 var expect = require("chai").expect;
 var sinon = require("sinon");
-var token = "[:A-Z0-9_]+";
+var token = "[:#A-Z0-9_]+";
 var __FIELD_NOT_FOUND = "__FIELD_NOT_FOUND";
 var __UNIQUE_FIELD = "__UNIQUE_FIELD";
 describe("UpdateManager", function() {
@@ -22,6 +22,132 @@ describe("UpdateManager", function() {
     });
     afterEach(function() {
         sandbox.restore();
+    });
+    describe("Safe character names", function() {
+        describe("Ordering", function() {
+            it("First", function() {
+                updateManager.set("0.a.a", "__NEW_VALUE");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET ${token}.a.a = ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "0.a.a",
+                        "value"  : "__NEW_VALUE"
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_2": "0"
+                });
+            });
+            it("Middle", function() {
+                updateManager.set("a.0.a", "__NEW_VALUE");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a.0.a",
+                        "value"  : "__NEW_VALUE"
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_2": "0"
+                });
+            });
+            it("Last", function() {
+                updateManager.set("a.a.0", "__NEW_VALUE");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.a.${token} = ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a.a.0",
+                        "value"  : "__NEW_VALUE"
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_2": "0"
+                });
+            });
+        });
+        describe("Character set", function() {
+            describe("Numeric", function() {
+                it("Whole, positive", function() {
+                    updateManager.set("a.1.a", "__NEW_VALUE");
+                    var updateExpression = updateManager.getDynamoUpdateExpression();
+                    expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+                    expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                        ":TOKEN_1": {
+                            "action": "SET",
+                            "field"  : "a.1.a",
+                            "value"  : "__NEW_VALUE"
+                        }
+                    });
+                    expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                        "#TOKEN_2": "1"
+                    });
+                });
+                it("Negative", function() {
+                    updateManager.set("a.-1.a", "__NEW_VALUE");
+                    var updateExpression = updateManager.getDynamoUpdateExpression();
+                    expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+                    expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                        ":TOKEN_1": {
+                            "action": "SET",
+                            "field"  : "a.-1.a",
+                            "value"  : "__NEW_VALUE"
+                        }
+                    });
+                    expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                        "#TOKEN_2": "-1"
+                    });
+                });
+                it("Numeric, second", function() {
+                    updateManager.set("a.a1.a", "__NEW_VALUE");
+                    var updateExpression = updateManager.getDynamoUpdateExpression();
+                    expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.a1.a = ${token}`));
+                    expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                        ":TOKEN_1": {
+                            "action": "SET",
+                            "field"  : "a.a1.a",
+                            "value"  : "__NEW_VALUE"
+                        }
+                    });
+                    assert(!updateExpression.hasOwnProperty("ExpressionAttributeNames"));
+                });
+            });
+        });
+        it("Dash", function() {
+            updateManager.set("a.-.a", "__NEW_VALUE");
+            var updateExpression = updateManager.getDynamoUpdateExpression();
+            expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+            expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                ":TOKEN_1": {
+                    "action": "SET",
+                    "field"  : "a.-.a",
+                    "value"  : "__NEW_VALUE"
+                }
+            });
+            expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                "#TOKEN_2": "-"
+            });
+        });
+        it("Dot", function() {
+            updateManager.set(["a",".","a"], "__NEW_VALUE");
+            var updateExpression = updateManager.getDynamoUpdateExpression();
+            expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+            expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                ":TOKEN_1": {
+                    "action": "SET",
+                    "field"  : ["a",".","a"],
+                    "value"  : "__NEW_VALUE"
+                }
+            });
+            expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                "#TOKEN_2": "."
+            });
+        });
     });
     describe("Json", function() {
         describe("Combination", function() {
@@ -322,6 +448,21 @@ describe("UpdateManager", function() {
                     }
                 });
             });
+            it("Should escape unsafe field names", function() {
+                updateManager.set("0", "__NEW_VALUE");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET ${token} = ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "0",
+                        "value"  : "__NEW_VALUE"
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_2": "0"
+                });
+            });
         });
         describe("Add", function() {
             it("Should add to a number", function() {
@@ -339,6 +480,26 @@ describe("UpdateManager", function() {
                         "field"  : "d.g.h.e.d",
                         "value"  : 6
                     }
+                });
+            });
+            it("Should escape unsafe field names", function() {
+                json.c.d = 5;
+                updateManager._updateJson(json);
+                updateManager.add("d.0.h.e.d", 6);
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET d\.${token}\.h\.e\.d = if_not_exists [\(] d\.${token}\.h\.e\.d , ${token} [\)] [\+] ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "value": 0
+                    },
+                    ":TOKEN_2": {
+                        "action": "ADD",
+                        "field"  : "d.0.h.e.d",
+                        "value"  : 6
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_3": "0"
                 });
             });
         });
@@ -360,6 +521,26 @@ describe("UpdateManager", function() {
                     }
                 });
             });
+            it("Should escape unsafe character names", function() {
+                json.c.d = [];
+                updateManager._updateJson(json);
+                updateManager.append("c.0", 6);
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET c\.${token} = list_append [\(] if_not_exists [\(] c\.${token} , ${token} [\)] , ${token}[\)]`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "value": []
+                    },
+                    ":TOKEN_2": {
+                        "action": "APPEND",
+                        "field"  : "c.0",
+                        "value"  : [6]
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_3": "0"
+                });
+            });
         });
         describe("Remove", function() {
             it("Level 0", function() {
@@ -367,6 +548,15 @@ describe("UpdateManager", function() {
                 var updateExpression = updateManager.getDynamoUpdateExpression();
                 expect(updateExpression.UpdateExpression).to.match(new RegExp(`REMOVE c\.d`));
                 expect(updateExpression.ExpressionAttributeValues).to.deep.equal({});
+            });
+            it("Should escape unsafe character names", function() {
+                updateManager.remove("c.0");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`REMOVE c\.${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({});
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_1": "0"
+                });
             });
         });
     });
