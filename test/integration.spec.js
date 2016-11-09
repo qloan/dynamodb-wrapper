@@ -95,7 +95,9 @@ describe('Table', function() {
                 rangeKey : joi.string().optional(),
                 personalInformation : joi.object().keys({
                     firstName : joi.string().encrypt(),
-                    lastName  : joi.string().encrypt()
+                    lastName  : joi.string().encrypt(),
+                    "0-0"     : joi.optional(),
+                    "."     : joi.optional()
                 }),
                 zzzz: joi.number(),
                 foo    : joi.string().required(),
@@ -233,6 +235,37 @@ describe('Table', function() {
                     expect(updateSpy.args[0][0].TableName).to.equal(tableName);
                     assert(rec.extensionWorks());
                     expect(rec.uniqueReference).to.equal(uniqueReference);
+                    next();
+                }
+            ], done);
+        });
+        it('Using expression attribute name', (done) => {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+
+            var uniqueReference = {a: true};
+            async.series([
+                (next) => {
+                    rec.create(next);
+                },
+                (next) => {
+                    rec.set("personalInformation.0-0", "Jeff");
+                    rec.uniqueReference = uniqueReference;
+                    rec.update(next);
+                },
+                (next) => {
+                    expect(rec.get("hashKey")).to.equal(id);
+                    expect(Object.keys(updateSpy.args[0][0].ExpressionAttributeNames).length);
+                    assert(rec.extensionWorks());
+                    expect(rec.uniqueReference).to.equal(uniqueReference);
+                    expect(rec.get("personalInformation.0-0")).to.equal("Jeff");
                     next();
                 }
             ], done);

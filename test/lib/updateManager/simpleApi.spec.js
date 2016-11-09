@@ -23,6 +23,132 @@ describe("UpdateManager", function() {
     afterEach(function() {
         sandbox.restore();
     });
+    describe("Safe character names", function() {
+        describe("Ordering", function() {
+            it("First", function() {
+                updateManager.set("0.a.a", "__NEW_VALUE");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET ${token}.a.a = ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "0.a.a",
+                        "value"  : "__NEW_VALUE"
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_2": "0"
+                });
+            });
+            it("Middle", function() {
+                updateManager.set("a.0.a", "__NEW_VALUE");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a.0.a",
+                        "value"  : "__NEW_VALUE"
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_2": "0"
+                });
+            });
+            it("Last", function() {
+                updateManager.set("a.a.0", "__NEW_VALUE");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.a.${token} = ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a.a.0",
+                        "value"  : "__NEW_VALUE"
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_2": "0"
+                });
+            });
+        });
+        describe("Character set", function() {
+            describe("Numeric", function() {
+                it("Whole, positive", function() {
+                    updateManager.set("a.1.a", "__NEW_VALUE");
+                    var updateExpression = updateManager.getDynamoUpdateExpression();
+                    expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+                    expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                        ":TOKEN_1": {
+                            "action": "SET",
+                            "field"  : "a.1.a",
+                            "value"  : "__NEW_VALUE"
+                        }
+                    });
+                    expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                        "#TOKEN_2": "1"
+                    });
+                });
+                it("Negative", function() {
+                    updateManager.set("a.-1.a", "__NEW_VALUE");
+                    var updateExpression = updateManager.getDynamoUpdateExpression();
+                    expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+                    expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                        ":TOKEN_1": {
+                            "action": "SET",
+                            "field"  : "a.-1.a",
+                            "value"  : "__NEW_VALUE"
+                        }
+                    });
+                    expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                        "#TOKEN_2": "-1"
+                    });
+                });
+                it("Numeric, second", function() {
+                    updateManager.set("a.a1.a", "__NEW_VALUE");
+                    var updateExpression = updateManager.getDynamoUpdateExpression();
+                    expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.a1.a = ${token}`));
+                    expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                        ":TOKEN_1": {
+                            "action": "SET",
+                            "field"  : "a.a1.a",
+                            "value"  : "__NEW_VALUE"
+                        }
+                    });
+                    assert(!updateExpression.hasOwnProperty("ExpressionAttributeNames"));
+                });
+            });
+        });
+        it("Dash", function() {
+            updateManager.set("a.-.a", "__NEW_VALUE");
+            var updateExpression = updateManager.getDynamoUpdateExpression();
+            expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+            expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                ":TOKEN_1": {
+                    "action": "SET",
+                    "field"  : "a.-.a",
+                    "value"  : "__NEW_VALUE"
+                }
+            });
+            expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                "#TOKEN_2": "-"
+            });
+        });
+        it("Dot", function() {
+            updateManager.set(["a",".","a"], "__NEW_VALUE");
+            var updateExpression = updateManager.getDynamoUpdateExpression();
+            expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+            expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                ":TOKEN_1": {
+                    "action": "SET",
+                    "field"  : ["a",".","a"],
+                    "value"  : "__NEW_VALUE"
+                }
+            });
+            expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                "#TOKEN_2": "."
+            });
+        });
+    });
     describe("Json", function() {
         describe("Combination", function() {
             it("Should apply operations in order", function() {
