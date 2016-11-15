@@ -24,6 +24,23 @@ describe("UpdateManager", function() {
         sandbox.restore();
     });
     describe("Safe character names", function() {
+        describe("Reserved Words", function() {
+            it("status", function() {
+                updateManager.set("a.status.a", "__NEW_VALUE");
+                var updateExpression = updateManager.getDynamoUpdateExpression();
+                expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+                expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
+                    ":TOKEN_1": {
+                        "action": "SET",
+                        "field"  : "a.status.a",
+                        "value"  : "__NEW_VALUE"
+                    }
+                });
+                expect(updateExpression.ExpressionAttributeNames).to.deep.equal({
+                    "#TOKEN_2": "status"
+                });
+            });
+        });
         describe("Ordering", function() {
             it("First", function() {
                 updateManager.set("0.a.a", "__NEW_VALUE");
