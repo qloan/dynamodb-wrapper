@@ -539,6 +539,17 @@ describe('Table', function() {
                         assert(retrievedItem.extensionWorks());
                         return next();
                     });
+                },
+                (next) => {
+                    testTable.get({
+                        "hashKey": "99999",
+                        "rangeKey": "22222"
+                    }, function(err, retrievedItem) {
+                        assert(!err);
+                        expect(getSpy.args[0][0].TableName).to.equal(tableName);
+                        expect(retrievedItem).to.be.undefined;
+                        return next();
+                    });
                 }
             ], done);
         });
