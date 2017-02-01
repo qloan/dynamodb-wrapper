@@ -173,6 +173,35 @@ describe('Item::', function() {
                 return done();
             });
         });
+        it('Should not duplicate append calls', (done) => {
+            rec.set("transactions", {
+                "c3962a356cf4416c8c88755d7a7e2dc6": {
+                    "amount": 524.64,
+                    "scheduledDate": "2019-10-26T04:00:00.000Z",
+                    "monthIndex": 0,
+                    "type": "recurring",
+                    "status": "successful",
+                    "id": "c3962a356cf4416c8c88755d7a7e2dc6",
+                    "statusHistory": [
+                        {
+                            "timestamp": "2017-02-01T15:53:33.639Z",
+                            "status": "scheduled"
+                        }
+                    ]
+                }
+            });
+            rec.append("transactions.c3962a356cf4416c8c88755d7a7e2dc6.statusHistory", {
+                "timestamp": "2017-02-01T15:53:33.648Z",
+                "status": "successful"
+            });
+
+            rec.get();
+            rec.get();
+            rec.get();
+            rec.get();
+            rec.get();
+            expect(rec.get("transactions.c3962a356cf4416c8c88755d7a7e2dc6.statusHistory").length).to.equal(2);
+        });
     });
 
     describe("Remove", function() {
