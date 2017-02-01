@@ -173,6 +173,20 @@ describe('Item::', function() {
                 return done();
             });
         });
+        it('AppendBug::', () => {
+            rec.set("a", {
+                "b": [
+                ]
+            });
+            rec.append("a.b", "c");
+
+            rec.get();
+            rec.get();
+            rec.get();
+            rec.get();
+            rec.get();
+            expect(rec.get("a.b").length).to.equal(1);
+        });
     });
 
     describe("Remove", function() {
