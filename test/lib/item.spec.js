@@ -173,7 +173,7 @@ describe('Item::', function() {
                 return done();
             });
         });
-        it('AppendBug::', (done) => {
+        it('AppendBug::', () => {
             rec.set("a", {
                 "b": [
                 ]
