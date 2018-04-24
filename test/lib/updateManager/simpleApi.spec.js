@@ -151,13 +151,13 @@ describe("UpdateManager", function() {
             });
         });
         it("Dot", function() {
-            updateManager.set(["a",".","a"], "__NEW_VALUE");
+            updateManager.set(["f",".","a"], "__NEW_VALUE");
             var updateExpression = updateManager.getDynamoUpdateExpression();
-            expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET a.${token}.a = ${token}`));
+            expect(updateExpression.UpdateExpression).to.match(new RegExp(`SET f.${token}.a = ${token}`));
             expect(updateExpression.ExpressionAttributeValues).to.deep.equal({
                 ":TOKEN_1": {
                     "action": "SET",
-                    "field"  : ["a",".","a"],
+                    "field"  : ["f",".","a"],
                     "value"  : "__NEW_VALUE"
                 }
             });

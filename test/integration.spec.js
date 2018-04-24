@@ -8,7 +8,7 @@ const sinon    = require("sinon");
 
 describe('Table', function() {
 
-    this.timeout(60000);
+    this.timeout(180000);
 
     let awsConfig = {
         region   : 'us-west-2'
