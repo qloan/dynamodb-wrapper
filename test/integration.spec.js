@@ -581,7 +581,6 @@ describe('Table', function() {
                                 firstName: 'John'
                             }
                         });
-                        console.log(JSON.stringify(, null, 4));
                         return next();
                     });
                 }
