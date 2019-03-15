@@ -19,7 +19,7 @@ describe('Table', function() {
     let Table      = DB.table;
     let Item       = DB.item;
     let db;
-    let tableName  = process.env.ENV_NAME + '-dynamodb-wrapper-test-table';
+    let tableName  = process.env.ENV_NAME + '-dynamodb-wrapper-test-table' + Math.round(Math.random() * 100000);
     let tableSchema;
     let testTable;
     let TestTableItem;
@@ -548,6 +548,39 @@ describe('Table', function() {
                         assert(!err);
                         expect(getSpy.args[0][0].TableName).to.equal(tableName);
                         expect(retrievedItem).to.be.undefined;
+                        return next();
+                    });
+                }
+            ], done);
+        });
+        it('get using extra parameters', (done) => {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            async.series([
+                (next) => {
+                    rec.create(next);
+                },
+                (next) => {
+                    testTable.get({
+                        "hashKey": id,
+                        "rangeKey": "2"
+                    }, {
+                       "AttributesToGet": ["personalInformation"] 
+                    }, function(err, retrievedItem) {
+                        assert(!err);
+                        expect(getSpy.args[0][0].TableName).to.equal(tableName);
+                        expect(retrievedItem.get()).to.deep.equal({
+                            personalInformation: {
+                                firstName: 'John'
+                            }
+                        });
                         return next();
                     });
                 }
