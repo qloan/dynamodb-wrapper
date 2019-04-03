@@ -16,7 +16,6 @@
     "async": "2.0.1",
     "aws-sdk": "2.382.0",
     "joi": "9.0.4",
-    "rocketloans-sdk": "github:qloan/rocketloans-sdk",
     "lodash": "4.17.11"
   },
   "bugs": {
