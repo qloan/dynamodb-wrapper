@@ -4,7 +4,7 @@
   "description": "A lightweight wrapper around the DynamoDB DocumentClient class.",
   "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "export NODE_PATH=$NODE_PATH:`pwd`; mocha --recursive test/**"
   },
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
     "async": "2.0.1",
     "aws-sdk": "2.382.0",
     "joi": "9.0.4",
-    "rocketloans-sdk": "github:qloan/rocketloans-sdk"
+    "lodash": "4.17.11"
   },
   "bugs": {
     "url": "https://github.com/qloan/dynamodb-wrapper/issues"
