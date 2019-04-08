@@ -6,7 +6,7 @@ const expect   = chai.expect;
 const assert   = chai.assert;
 const sinon    = require("sinon");
 
-describe('Table: integration', function() {
+describe('Table', function() {
 
     this.timeout(180000);
 
