@@ -30,6 +30,7 @@ describe('Table', function() {
     let deleteSpy;
     let querySpy;
     let scanSpy;
+    let afterUpdate;
 
     before((done) => {
         console.log('Creating test table...');
@@ -83,6 +84,7 @@ describe('Table', function() {
     });
 
     beforeEach(function() {
+        afterUpdate = 0;
         sandbox = sinon.sandbox.create();
         var tableSchema = new Schema({
             tableName: tableName,
@@ -129,10 +131,352 @@ describe('Table', function() {
         scanSpy = sandbox.spy(tableSchema.db, "scan");
         getSpy = sandbox.spy(tableSchema.db, "get");
         updateSpy = sandbox.spy(tableSchema.db, "update");
+        tableSchema.on("afterUpdate", function(data, callback) {
+            afterUpdate++;
+            return callback();
+        });
     });
 
     afterEach(function() {
         sandbox.restore();
+    });
+
+    describe("Lock::", function() {
+        it("Should be able to handle all types of errors", function(done) {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : {doesNotMatchSchema: true},
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.acquireLock({
+                ms: 1000
+            }, (err, output) => {
+                expect(output.lockAcquired).to.equal(false);
+                assert(err, "Expect to receive an error");
+                return done();
+            });
+        });
+        it("Should not fire update hook for lock", function(done) {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : String(Math.round(Math.random() * 100000)),
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.acquireLock({
+                    ms: 1000
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    expect(output.lockAcquired).to.equal(true);
+                    expect(afterUpdate).to.equal(0);
+                    return done();
+                });
+            });
+        });
+        it("Should fire update hook for update", function(done) {
+            var id = getUniqueId();
+            let rangeKey = String(Math.round(Math.random() * 100000));
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey,
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.set("foo", "bca");
+                rec.update((err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    testTable.get({
+                        hashKey: id,
+                        rangeKey
+                    }, (err, item) => {
+                        assert(!err, JSON.stringify(err));
+                        expect(item.get("foo")).to.equal("bca");
+                        expect(afterUpdate).to.equal(1);
+                        return done();
+                    });
+                });
+            });
+        });
+        describe("Realtime", function() {
+            it("Failure", function(done) {
+                var id = getUniqueId();
+                let rec = new TestTableItem({
+                    hashKey  : id,
+                    rangeKey : String(Math.round(Math.random() * 100000)),
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    }
+                });
+                rec.create((err) => {
+                    assert(!err, JSON.stringify(err));
+                    rec.acquireLock({
+                        ms: 1000
+                    }, (err, output) => {
+                        assert(!err, JSON.stringify(err));
+                        expect(output.lockAcquired).to.equal(true);
+                        setTimeout(() => {
+                            rec.acquireLock({
+                                ms: 1000
+                            }, (err, output) => {
+                                assert(!err, JSON.stringify(err));
+                                expect(output.lockAcquired).to.equal(false);
+                                return done();
+                            });
+                        }, 50);
+                    });
+                });
+            });
+            it("Success", function(done) {
+                var id = getUniqueId();
+                let rec = new TestTableItem({
+                    hashKey  : id,
+                    rangeKey : String(Math.round(Math.random() * 100000)),
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    }
+                });
+                rec.create((err) => {
+                    assert(!err, JSON.stringify(err));
+                    rec.acquireLock({
+                        ms: 1000
+                    }, (err, output) => {
+                        assert(!err, JSON.stringify(err));
+                        expect(output.lockAcquired).to.equal(true);
+                        setTimeout(() => {
+                            rec.acquireLock({
+                                ms: 1000
+                            }, (err, output) => {
+                                assert(!err, JSON.stringify(err));
+                                expect(output.lockAcquired).to.equal(true);
+                                return done();
+                            });
+                        }, 1500);
+                    });
+                });
+            });
+        });
+        it("Should be able to acquire a lock", function(done) {
+            var id = getUniqueId();
+            let rangeKey = String(Math.round(Math.random() * 100000));
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey,
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            let now = new Date("2019-04-12T04:00:00.000Z");
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.acquireLock({
+                    ms: 1000,
+                    now
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    expect(output.lockAcquired).to.equal(true);
+                    testTable.get({
+                        hashKey: id,
+                        rangeKey
+                    }, (err, item) => {
+                        assert(!err, JSON.stringify(err));
+                        expect(item.get("internal_locks_replicate_to_rds")).to.equal("2019-04-12T04:00:01.000Z");
+                        return done();
+                    });
+                });
+            });
+        });
+        it("Lock should continue to allow updates", function(done) {
+            var id = getUniqueId();
+            let rangeKey = String(Math.round(Math.random() * 100000));
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey,
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            let now = new Date("2019-04-12T04:00:00.000Z");
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.acquireLock({
+                    ms: 1000,
+                    now
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    expect(output.lockAcquired).to.equal(true);
+                    rec.set("foo", "bca");
+                    rec.update((err) => {
+                        assert(!err, JSON.stringify(err));
+                        testTable.get({
+                            hashKey: id,
+                            rangeKey,
+                        }, (err, item) => {
+                            assert(!err, JSON.stringify(err));
+                            expect(item.get("foo")).to.equal("bca");
+                            return done();
+                        });
+                    });
+                });
+            });
+        });
+        it("Should be able to gracefully fail to acquire a lock", function(done) {
+            var id = getUniqueId();
+            let rangeKey = String(Math.round(Math.random() * 100000));
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey,
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            let now = new Date("2019-04-12T04:00:00.000Z");
+            let lockNotReleased = new Date("2019-04-12T04:00:01.000Z");
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.acquireLock({
+                    ms: 1000,
+                    now
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    expect(output.lockAcquired).to.equal(true);
+                    rec.acquireLock({
+                        ms: 1000,
+                        now: lockNotReleased
+                    }, (err, output) => {
+                        assert(!err, JSON.stringify(err));
+                        expect(output.lockAcquired).to.equal(false);
+                        return done();
+                    });
+                });
+            });
+        });
+        it("Should be able to succesfully acquire a second lock", function(done) {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : String(Math.round(Math.random() * 100000)),
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            let now = new Date("2019-04-12T04:00:00.000Z");
+            let lockReleased = new Date("2019-04-12T04:00:01.001Z");
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.acquireLock({
+                    ms: 1000,
+                    now
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    expect(output.lockAcquired).to.equal(true);
+                    rec.acquireLock({
+                        ms: 1000,
+                        now: lockReleased
+                    }, (err, output) => {
+                        assert(!err, JSON.stringify(err));
+                        expect(output.lockAcquired).to.equal(true);
+                        return done();
+                    });
+                });
+            });
+        });
+        it("Should be able to fail to acquire a third lock", function(done) {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : String(Math.round(Math.random() * 100000)),
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            let now = new Date("2019-04-12T04:00:00.000Z");
+            let lockOneReleased = new Date("2019-04-12T04:00:01.001Z");
+            let lockTwoNotReleased = new Date("2019-04-12T04:00:02.001Z");
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.acquireLock({
+                    ms: 1000,
+                    now
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    expect(output.lockAcquired).to.equal(true);
+                    rec.acquireLock({
+                        ms: 1000,
+                        now: lockOneReleased
+                    }, (err, output) => {
+                        assert(!err, JSON.stringify(err));
+                        expect(output.lockAcquired).to.equal(true);
+                        rec.acquireLock({
+                            ms: 1000,
+                            now: lockTwoNotReleased
+                        }, (err, output) => {
+                            assert(!err, JSON.stringify(err));
+                            expect(output.lockAcquired).to.equal(false);
+                            return done();
+                        });
+                    });
+                });
+            });
+        });
+        it("Should be able to successfully acquire a third lock", function(done) {
+            var id = getUniqueId();
+            let rec = new TestTableItem({
+                hashKey  : id,
+                rangeKey : String(Math.round(Math.random() * 100000)),
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            let now = new Date("2019-04-12T04:00:00.000Z");
+            let lockOneReleased = new Date("2019-04-12T04:00:01.001Z");
+            let lockTwoReleased = new Date("2019-04-12T04:00:02.002Z");
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.acquireLock({
+                    ms: 1000,
+                    now
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    expect(output.lockAcquired).to.equal(true);
+                    rec.acquireLock({
+                        ms: 1000,
+                        now: lockOneReleased
+                    }, (err, output) => {
+                        assert(!err, JSON.stringify(err));
+                        expect(output.lockAcquired).to.equal(true);
+                        rec.acquireLock({
+                            ms: 1000,
+                            now: lockTwoReleased
+                        }, (err, output) => {
+                            assert(!err, JSON.stringify(err));
+                            expect(output.lockAcquired).to.equal(true);
+                            return done();
+                        });
+                    });
+                });
+            });
+        });
     });
 
     describe("Create", function() {

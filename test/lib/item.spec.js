@@ -148,43 +148,6 @@ describe('Item::', function() {
                 return done();
             });
         });
-        it('Should not set recent update timestamp on first update', (done) => {
-
-            let uniqueReference = {a: true};
-            rec.uniqueReference = uniqueReference;
-            rec.set("personalInformation.firstName", "__MODIFIED");
-
-            rec.update((err) => {
-                assert(!err);
-                expect(rec.uniqueReference).to.equal(uniqueReference);
-                expect(rec.get("personalInformation.firstName")).to.equal("__MODIFIED");
-                expect(rec.get("updatedAt")).to.exist;
-                expect(rec.get("updateTimestampHistory")).to.not.exist;
-
-                return done();
-            });
-        });
-        it('Should set recent update timestamp on second update', (done) => {
-
-            rec.update((err) => {
-                assert(!err);
-                let oldUpdatedAt = rec.get("updatedAt");
-                expect(rec.get("updateTimestampHistory")).to.not.exist;
-                expect(oldUpdatedAt).to.exist;
-
-                setTimeout(() => {
-                    rec.update((err) => {
-                        assert(!err);
-                        expect(rec.get("updatedAt")).to.exist;
-                        expect(rec.get("updateTimestampHistory")).to.exist;
-                        expect(rec.get("updateTimestampHistory")).to.equal(oldUpdatedAt);
-                        expect(rec.get("updateTimestampHistory")).to.not.equal(rec.get("updatedAt"));
-        
-                        return done();
-                    });
-                }, 50);
-            });
-        });
     });
 
     describe("Add", function() {
