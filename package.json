@@ -26,6 +26,7 @@
     "chai": "3.5.0",
     "chai-spies": "0.7.1",
     "mocha": "3.1.0",
-    "sinon": "1.17.6"
+    "sinon": "1.17.6",
+    "proxyquire": "^2.1.0"
   }
 }
