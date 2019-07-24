@@ -4,6 +4,7 @@ const chai     = require('chai');
 const expect   = chai.expect;
 const assert   = chai.assert;
 const sinon    = require("sinon");
+const _ = require("lodash");
 
 describe('Item::', function() {
     let Item       = DB.item;
@@ -50,7 +51,7 @@ describe('Item::', function() {
         createStub.callsArg(1);
         mockSchema.update = function() {};
         updateStub = sandbox.stub(mockSchema, "update", function(itemJson, updateParams, callback) {
-            return callback(null, rec.get());
+            return callback(null, itemJson);
         });
         mockSchema.delete = function() {};
         deleteStub = sandbox.stub(mockSchema, "delete");
@@ -59,6 +60,87 @@ describe('Item::', function() {
 
     afterEach(function() {
         sandbox.restore();
+    });
+
+    describe("timestamps", function() {
+        describe("createdAt", function () {
+            it("By default createdAt should be new Date ISO strings", function(done) {
+                let rec = new TestTableItem({
+                    hashKey  : "1",
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    }
+                });
+                rec.create((err) => {
+                    assert(!err, JSON.stringify(err));
+                    const fractionLength = _.last(rec.get("createdAt").split("\.")).length;
+                    expect(fractionLength).to.equal(3 + 1); // 3 digits and a Z
+                    return done();
+                });
+            });
+            it(`Should be able to use extended timestamp versions`, function(done) {
+                let rec = new TestTableItem({
+                    hashKey  : "1",
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    }
+                });
+                mockSchema.timestamps = "EXTENDED";
+                rec.create((err) => {
+                    assert(!err, JSON.stringify(err));
+                    const fractionLength = _.last(rec.get("createdAt").split("\.")).length;
+                    expect(fractionLength).to.equal(3 + 3 + 3 + 1); // 3 milliseconds, 3 microseconds, 3 nanoseconds and a Z
+                    return done();
+                });
+            });
+        });
+        describe("updatedAt", function () {
+            it("By default updatedAt should be new Date ISO strings", function(done) {
+                let rec = new TestTableItem({
+                    hashKey  : "1",
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    }
+                });
+                rec.create((err) => {
+                    assert(!err, JSON.stringify(err));
+                    rec.set("foo", "bca");
+                    rec.update((err) => {
+                        assert(!err, JSON.stringify(err));
+                        const fractionLength = _.last(rec.get("updatedAt").split("\.")).length;
+                        expect(fractionLength).to.equal(3 + 1); // 3 digits and a Z
+                        return done();
+                    });
+                });
+            });
+            it(`Should be able to use extended timestamp versions`, function(done) {
+                let rec = new TestTableItem({
+                    hashKey  : "1",
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    }
+                });
+                mockSchema.timestamps = "EXTENDED";
+                rec.create((err) => {
+                    assert(!err, JSON.stringify(err));
+                    rec.set("foo", "bca");
+                    rec.update((err) => {
+                        assert(!err, JSON.stringify(err));
+                        const fractionLength = _.last(rec.get("updatedAt").split("\.")).length;
+                        expect(fractionLength).to.equal(3 + 3 + 3 + 1); // 3 milliseconds, 3 microseconds, 3 nanoseconds and a Z
+                        return done();
+                    });
+                });
+            });
+        });
     });
 
     describe("extend", function() {
