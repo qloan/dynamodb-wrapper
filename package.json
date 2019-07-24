@@ -26,12 +26,7 @@
     "chai": "3.5.0",
     "chai-spies": "0.7.1",
     "mocha": "3.1.0",
-<<<<<<< HEAD
-    "proxyquire": "^2.1.1",
-    "sinon": "1.17.6"
-=======
     "sinon": "1.17.6",
     "proxyquire": "^2.1.0"
->>>>>>> c854de96a2b47392f2cc1b29ebaa4cd55696ec18
   }
 }
