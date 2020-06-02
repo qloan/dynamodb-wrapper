@@ -1,10 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-cd /dynamodb-wrapper;
+pushd "${SOURCE_DIR}/dynamodb-wrapper";
 
-if [ "$1" = "clean" ]; then
-    echo "Removing node_modules folder"
-    rm -rf node_modules
-fi
+    if [[ "$1" = "clean" ]]; then
+        echo "Removing node_modules folder"
+        rm -rf node_modules
+    fi
 
-yarn install;
+    yarn install
+
+popd;
