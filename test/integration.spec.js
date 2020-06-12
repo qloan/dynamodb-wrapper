@@ -5,6 +5,7 @@ const chai     = require('chai');
 const expect   = chai.expect;
 const assert   = chai.assert;
 const sinon    = require("sinon");
+const _        = require("lodash");
 
 describe('Table: integration', function() {
 
@@ -86,7 +87,7 @@ describe('Table: integration', function() {
     beforeEach(function() {
         afterUpdate = 0;
         sandbox = sinon.sandbox.create();
-        var tableSchema = new Schema({
+        tableSchema = new Schema({
             tableName: tableName,
             key: {
                 hash: 'hashKey',
@@ -506,6 +507,152 @@ describe('Table: integration', function() {
                 return done();
             });
         });
+        it('timestamps', (done) => {
+            var id = getUniqueId();
+            tableSchema = new Schema({
+                tableName: tableName,
+                timestamps: true,
+                key: {
+                    hash: 'hashKey',
+                    range: 'rangeKey'
+                },
+                schema: {
+                    hashKey : joi.string().required(),
+                    rangeKey : joi.string().optional(),
+                    personalInformation : joi.object().keys({
+                        firstName : joi.string().encrypt(),
+                        lastName  : joi.string().encrypt(),
+                        "0-0"     : joi.optional(),
+                        "."     : joi.optional()
+                    }),
+                    zzzz: joi.number(),
+                    foo    : joi.string().required(),
+                    arr: joi.array()
+                }
+            });
+            putSpy = sandbox.spy(tableSchema.db, "put");
+            deleteSpy = sandbox.spy(tableSchema.db, "delete");
+            querySpy = sandbox.spy(tableSchema.db, "query");
+            scanSpy = sandbox.spy(tableSchema.db, "scan");
+            getSpy = sandbox.spy(tableSchema.db, "get");
+            updateSpy = sandbox.spy(tableSchema.db, "update");
+            class TableItemTimestamps extends Item {
+                constructor(json) {
+                    super({
+                        attrs: json,
+                        schema: tableSchema
+                    });
+                }
+                getFoo(foo) {
+                    return 'Hello, ' + "foo" + '!';
+                }
+                extensionWorks() {
+                    return true;
+                }
+            }
+            testTable = new Table({
+                schema          : tableSchema,
+                itemConstructor : TableItemTimestamps
+            });
+            let rec = new TableItemTimestamps({
+                hashKey  : id,
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.set("personalInformation.firstName", "Jeff");
+            var uniqueReference = {a: true};
+            rec.uniqueReference = uniqueReference;
+
+            rec.create((err) => {
+                assert(!err);
+                expect(rec.get("hashKey")).to.equal(id);
+                expect(putSpy.args[0][0].Item.hashKey).to.equal(id);
+                expect(rec.get("personalInformation.firstName")).to.equal("Jeff");
+                const fractionLength = _.last(rec.get("createdAt").split("\.")).length;
+                expect(fractionLength).to.equal(3 + 1); // 3 milliseconds and a Z
+                expect(putSpy.args[0][0].Item.personalInformation.firstName).to.equal("Jeff");
+                expect(putSpy.args[0][0].TableName).to.equal(tableName);
+                assert(rec.extensionWorks());
+                expect(rec.uniqueReference).to.equal(uniqueReference);
+                return done();
+            });
+        });
+        it('timestamps extended', (done) => {
+            var id = getUniqueId();
+            tableSchema = new Schema({
+                tableName: tableName,
+                timestamps: "EXTENDED",
+                key: {
+                    hash: 'hashKey',
+                    range: 'rangeKey'
+                },
+                schema: {
+                    hashKey : joi.string().required(),
+                    rangeKey : joi.string().optional(),
+                    personalInformation : joi.object().keys({
+                        firstName : joi.string().encrypt(),
+                        lastName  : joi.string().encrypt(),
+                        "0-0"     : joi.optional(),
+                        "."     : joi.optional()
+                    }),
+                    zzzz: joi.number(),
+                    foo    : joi.string().required(),
+                    arr: joi.array()
+                }
+            });
+            putSpy = sandbox.spy(tableSchema.db, "put");
+            deleteSpy = sandbox.spy(tableSchema.db, "delete");
+            querySpy = sandbox.spy(tableSchema.db, "query");
+            scanSpy = sandbox.spy(tableSchema.db, "scan");
+            getSpy = sandbox.spy(tableSchema.db, "get");
+            updateSpy = sandbox.spy(tableSchema.db, "update");
+            class TableItemTimestamps extends Item {
+                constructor(json) {
+                    super({
+                        attrs: json,
+                        schema: tableSchema
+                    });
+                }
+                getFoo(foo) {
+                    return 'Hello, ' + "foo" + '!';
+                }
+                extensionWorks() {
+                    return true;
+                }
+            }
+            testTable = new Table({
+                schema          : tableSchema,
+                itemConstructor : TableItemTimestamps
+            });
+            let rec = new TableItemTimestamps({
+                hashKey  : id,
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.set("personalInformation.firstName", "Jeff");
+            var uniqueReference = {a: true};
+            rec.uniqueReference = uniqueReference;
+
+            rec.create((err) => {
+                assert(!err);
+                expect(rec.get("hashKey")).to.equal(id);
+                expect(putSpy.args[0][0].Item.hashKey).to.equal(id);
+                expect(rec.get("personalInformation.firstName")).to.equal("Jeff");
+                const fractionLength = _.last(rec.get("createdAt").split("\.")).length;
+                expect(fractionLength).to.equal(3 + 3 + 3 + 1); // 3 milliseconds 3 microseconds 3 nanoseconds and a Z
+                expect(putSpy.args[0][0].Item.personalInformation.firstName).to.equal("Jeff");
+                expect(putSpy.args[0][0].TableName).to.equal(tableName);
+                assert(rec.extensionWorks());
+                expect(rec.uniqueReference).to.equal(uniqueReference);
+                return done();
+            });
+        });
         it("Failure to validate", function(done) {
             var id = getUniqueId();
             let rec = new TestTableItem({
@@ -570,6 +717,171 @@ describe('Table: integration', function() {
                     rec.update(next);
                 },
                 (next) => {
+                    expect(rec.get("hashKey")).to.equal(id);
+                    assert(updateSpy.args[0][0].UpdateExpression.length);
+                    expect(rec.get("personalInformation.firstName")).to.equal("Jeff");
+                    expect(Object.keys(updateSpy.args[0][0].ExpressionAttributeValues).length);
+                    expect(updateSpy.args[0][0].Key.hashKey).to.equal(id);
+                    expect(updateSpy.args[0][0].Key.rangeKey).to.equal("2");
+                    expect(updateSpy.args[0][0].TableName).to.equal(tableName);
+                    assert(rec.extensionWorks());
+                    expect(rec.uniqueReference).to.equal(uniqueReference);
+                    next();
+                }
+            ], done);
+        });
+        it('Timestamps', (done) => {
+            var id = getUniqueId();
+            tableSchema = new Schema({
+                tableName: tableName,
+                timestamps: true,
+                key: {
+                    hash: 'hashKey',
+                    range: 'rangeKey'
+                },
+                schema: {
+                    hashKey : joi.string().required(),
+                    rangeKey : joi.string().optional(),
+                    personalInformation : joi.object().keys({
+                        firstName : joi.string().encrypt(),
+                        lastName  : joi.string().encrypt(),
+                        "0-0"     : joi.optional(),
+                        "."     : joi.optional()
+                    }),
+                    zzzz: joi.number(),
+                    foo    : joi.string().required(),
+                    arr: joi.array()
+                }
+            });
+            putSpy = sandbox.spy(tableSchema.db, "put");
+            deleteSpy = sandbox.spy(tableSchema.db, "delete");
+            querySpy = sandbox.spy(tableSchema.db, "query");
+            scanSpy = sandbox.spy(tableSchema.db, "scan");
+            getSpy = sandbox.spy(tableSchema.db, "get");
+            updateSpy = sandbox.spy(tableSchema.db, "update");
+            class TableItemTimestamps extends Item {
+                constructor(json) {
+                    super({
+                        attrs: json,
+                        schema: tableSchema
+                    });
+                }
+                getFoo(foo) {
+                    return 'Hello, ' + "foo" + '!';
+                }
+                extensionWorks() {
+                    return true;
+                }
+            }
+            testTable = new Table({
+                schema          : tableSchema,
+                itemConstructor : TableItemTimestamps
+            });
+            let rec = new TableItemTimestamps({
+                hashKey  : id,
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+
+
+            var uniqueReference = {a: true};
+            async.series([
+                (next) => {
+                    rec.create(next);
+                },
+                (next) => {
+                    rec.set("personalInformation.firstName", "Jeff");
+                    rec.uniqueReference = uniqueReference;
+                    rec.update(next);
+                },
+                (next) => {
+                    const fractionLength = _.last(rec.get("updatedAt").split("\.")).length;
+                    expect(fractionLength).to.equal(3 + 1); // 3 digits and a Z
+                    expect(rec.get("hashKey")).to.equal(id);
+                    assert(updateSpy.args[0][0].UpdateExpression.length);
+                    expect(rec.get("personalInformation.firstName")).to.equal("Jeff");
+                    expect(Object.keys(updateSpy.args[0][0].ExpressionAttributeValues).length);
+                    expect(updateSpy.args[0][0].Key.hashKey).to.equal(id);
+                    expect(updateSpy.args[0][0].Key.rangeKey).to.equal("2");
+                    expect(updateSpy.args[0][0].TableName).to.equal(tableName);
+                    assert(rec.extensionWorks());
+                    expect(rec.uniqueReference).to.equal(uniqueReference);
+                    next();
+                }
+            ], done);
+        });
+        it('Timestamps - extended', (done) => {
+            var id = getUniqueId();
+            tableSchema = new Schema({
+                tableName: tableName,
+                timestamps: "EXTENDED",
+                key: {
+                    hash: 'hashKey',
+                    range: 'rangeKey'
+                },
+                schema: {
+                    hashKey : joi.string().required(),
+                    rangeKey : joi.string().optional(),
+                    personalInformation : joi.object().keys({
+                        firstName : joi.string().encrypt(),
+                        lastName  : joi.string().encrypt(),
+                        "0-0"     : joi.optional(),
+                        "."     : joi.optional()
+                    }),
+                    zzzz: joi.number(),
+                    foo    : joi.string().required(),
+                    arr: joi.array()
+                }
+            });
+            putSpy = sandbox.spy(tableSchema.db, "put");
+            deleteSpy = sandbox.spy(tableSchema.db, "delete");
+            querySpy = sandbox.spy(tableSchema.db, "query");
+            scanSpy = sandbox.spy(tableSchema.db, "scan");
+            getSpy = sandbox.spy(tableSchema.db, "get");
+            updateSpy = sandbox.spy(tableSchema.db, "update");
+            class TableItemTimestamps extends Item {
+                constructor(json) {
+                    super({
+                        attrs: json,
+                        schema: tableSchema
+                    });
+                }
+                getFoo(foo) {
+                    return 'Hello, ' + "foo" + '!';
+                }
+                extensionWorks() {
+                    return true;
+                }
+            }
+            testTable = new Table({
+                schema          : tableSchema,
+                itemConstructor : TableItemTimestamps
+            });
+            let rec = new TableItemTimestamps({
+                hashKey  : id,
+                rangeKey : "2",
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+
+            var uniqueReference = {a: true};
+            async.series([
+                (next) => {
+                    rec.create(next);
+                },
+                (next) => {
+                    rec.set("personalInformation.firstName", "Jeff");
+                    rec.uniqueReference = uniqueReference;
+                    rec.update(next);
+                },
+                (next) => {
+                    const fractionLength = _.last(rec.get("updatedAt").split("\.")).length;
+                    expect(fractionLength).to.equal(3 + 3 + 3 + 1); // 3 milliseconds 3 microseconds 3 nanoseconds and a Z
                     expect(rec.get("hashKey")).to.equal(id);
                     assert(updateSpy.args[0][0].UpdateExpression.length);
                     expect(rec.get("personalInformation.firstName")).to.equal("Jeff");
