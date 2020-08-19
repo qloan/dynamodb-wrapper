@@ -1,5 +1,9 @@
 const DB       = require('lib');
 const AWS      = require('aws-sdk');
+const S3       = new AWS.S3({
+    computeChecksums : true,
+    signatureVersion : "v4"
+});
 const async    = require('async');
 const chai     = require('chai');
 const expect   = chai.expect;
@@ -140,6 +144,196 @@ describe('Table: integration', function() {
 
     afterEach(function() {
         sandbox.restore();
+    });
+
+    describe("S3::", function() {
+        it("NO_RECORD_PARAMS::", function(done) {
+            delete tableSchema.s3RecordParams;
+            const hashKey = getUniqueId();
+            const rangeKey = String(Math.round(Math.random() * 100000));
+            const rec = new TestTableItem({
+                hashKey,
+                rangeKey,
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                S3.listObjects({
+                    Bucket: "rl-nonprod-dynamo-backups",
+                    Prefix: `${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/create-`
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    assert(!output.Contents.length, "Should be no object in s3");
+                    rec.set("foo", "def");
+                    rec.update((err) => {
+                        assert(!err, JSON.stringify(err));
+                        S3.listObjects({
+                            Bucket: "rl-nonprod-dynamo-backups",
+                            Prefix: `${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/update-`
+                        }, (err, output) => {
+                            assert(!err, JSON.stringify(err));
+                            assert(!output.Contents.length, "Should be no object in s3");
+                            return done();
+                        });
+                    });
+                });
+            });
+        });
+        it("CREATE::", function(done) {
+            tableSchema.s3RecordParams = {
+                Bucket: "rl-nonprod-dynamo-backups"
+            };
+            const hashKey = getUniqueId();
+            const rangeKey = String(Math.round(Math.random() * 100000));
+            const rec = new TestTableItem({
+                hashKey,
+                rangeKey,
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                S3.listObjects({
+                    Bucket: "rl-nonprod-dynamo-backups",
+                    Prefix: `${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/create-`
+                }, (err, output) => {
+                    assert(!err, JSON.stringify(err));
+                    const relevantObject = _.find(output.Contents, c => {
+                        return c.Key.startsWith(`${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/create-`);
+                    });
+                    assert(relevantObject, "There should be an object in s3 now");
+                    S3.getObject({
+                        Bucket: "rl-nonprod-dynamo-backups",
+                        Key: relevantObject.Key
+                    }, (err, object) => {
+                        assert(!err, JSON.stringify(err));
+                        const obj = JSON.parse(
+                            Buffer.from(object.Body).toString("utf8")
+                        );
+                        expect(obj).to.deep.equal(rec.get());
+                        return done();
+                    });
+                });
+            });
+        });
+        it("UPDATE::", function(done) {
+            tableSchema.s3RecordParams = {
+                Bucket: "rl-nonprod-dynamo-backups"
+            };
+            const hashKey = getUniqueId();
+            const rangeKey = String(Math.round(Math.random() * 100000));
+            const rec = new TestTableItem({
+                hashKey,
+                rangeKey,
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.set("foo", "def");
+                rec.update((err) => {
+                    assert(!err, JSON.stringify(err));
+                    S3.listObjects({
+                        Bucket: "rl-nonprod-dynamo-backups",
+                        Prefix: `${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/update-`
+                    }, (err, output) => {
+                        assert(!err, JSON.stringify(err));
+                        const relevantObject = _.find(output.Contents, c => {
+                            return c.Key.startsWith(`${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/update-`);
+                        });
+                        assert(relevantObject, "There should be an object in s3 now");
+                        S3.getObject({
+                            Bucket: "rl-nonprod-dynamo-backups",
+                            Key: relevantObject.Key
+                        }, (err, object) => {
+                            assert(!err, JSON.stringify(err));
+                            const obj = JSON.parse(
+                                Buffer.from(object.Body).toString("utf8")
+                            );
+                            expect(obj).to.deep.equal(rec.get());
+                            return done();
+                        });
+                    });
+                });
+            });
+        });
+        it("SECOND_UPDATE::", function(done) {
+            tableSchema.s3RecordParams = {
+                Bucket: "rl-nonprod-dynamo-backups"
+            };
+            const hashKey = getUniqueId();
+            const rangeKey = String(Math.round(Math.random() * 100000));
+            const rec = new TestTableItem({
+                hashKey,
+                rangeKey,
+                foo : "abc",
+                personalInformation: {
+                    firstName: 'John'
+                }
+            });
+            rec.create((err) => {
+                assert(!err, JSON.stringify(err));
+                rec.set("foo", "def");
+                rec.update((err) => {
+                    assert(!err, JSON.stringify(err));
+                    S3.listObjects({
+                        Bucket: "rl-nonprod-dynamo-backups",
+                        Prefix: `${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/update-`
+                    }, (err, output) => {
+                        assert(!err, JSON.stringify(err));
+                        const firstObject = _.find(output.Contents, c => {
+                            return c.Key.startsWith(`${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/update-`);
+                        });
+                        assert(firstObject, "There should be an object in s3 now");
+                        S3.getObject({
+                            Bucket: "rl-nonprod-dynamo-backups",
+                            Key: firstObject.Key
+                        }, (err, object) => {
+                            assert(!err, JSON.stringify(err));
+                            const obj = JSON.parse(
+                                Buffer.from(object.Body).toString("utf8")
+                            );
+                            expect(obj).to.deep.equal(rec.get());
+                            rec.set("foo", "def2");
+                            rec.update((err) => {
+                                assert(!err, JSON.stringify(err));
+                                S3.listObjects({
+                                    Bucket: "rl-nonprod-dynamo-backups",
+                                    Prefix: `${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/update-`
+                                }, (err, output) => {
+                                    assert(!err, JSON.stringify(err));
+                                    const relevantObjects = _.filter(output.Contents, c => {
+                                        return c.Key.startsWith(`${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/update-`);
+                                    });
+                                    expect(relevantObjects.length).to.equal(2);
+                                    const secondObject = _.find(output.Contents, c => {
+                                        return c.Key !== firstObject.Key
+                                    });
+                                    S3.getObject({
+                                        Bucket: "rl-nonprod-dynamo-backups",
+                                        Key: secondObject.Key
+                                    }, (err, object) => {
+                                        assert(!err, JSON.stringify(err));
+                                        const secondObj = JSON.parse(
+                                            Buffer.from(object.Body).toString("utf8")
+                                        );
+                                        expect(secondObj).to.deep.equal(rec.get());
+                                        return done();
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
     });
 
     describe("Lock::", function() {
