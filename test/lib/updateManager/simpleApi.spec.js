@@ -16,7 +16,7 @@ describe("UpdateManager", function() {
         updateManager = new UpdateManager(json);
     });
     beforeEach(function() {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         constructJsonCommandSpy = sandbox.spy(updateManager.jsonUpdateExpression, "constructCommand");
         logErrorStub = sandbox.stub(updateManager.dependencies, "logError");
     });

@@ -18,7 +18,7 @@ describe('Item::', function() {
     let id;
 
     beforeEach(function() {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         mockSchema = {
             timestamps: true
         };
@@ -50,9 +50,10 @@ describe('Item::', function() {
         createStub = sandbox.stub(mockSchema, "create");
         createStub.callsArg(1);
         mockSchema.update = function() {};
-        updateStub = sandbox.stub(mockSchema, "update", function(itemJson, updateParams, callback) {
+        updateStub = sandbox.stub(mockSchema, "update").callsFake(function(itemJson, updateParams, callback) {
             return callback(null, itemJson);
         });
+
         mockSchema.delete = function() {};
         deleteStub = sandbox.stub(mockSchema, "delete");
         deleteStub.callsArg(1);

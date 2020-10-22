@@ -19,10 +19,11 @@ describe('Table: integration', function() {
         region   : 'us-west-2'
 
     };
-    let joi        = DB.joi;
-    let Schema     = DB.schema(awsConfig);
-    let Table      = DB.table;
-    let Item       = DB.item;
+    let joi = DB.joi;
+    let Schema = DB.schema(awsConfig);
+    let Table = DB.table;
+    let PromisifiedTable = DB.PromisifiedTable;
+    let Item = DB.item;
     let db;
     let tableName  = process.env.ENV_NAME + '-dynamodb-wrapper-test-table' + Math.round(Math.random() * 100000);
     let tableSchema;
@@ -90,7 +91,7 @@ describe('Table: integration', function() {
 
     beforeEach(function() {
         afterUpdate = 0;
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         tableSchema = new Schema({
             tableName: tableName,
             key: {
@@ -1435,6 +1436,92 @@ describe('Table: integration', function() {
                     });
                 }
             ], done);
+        });
+        it("get using extra parameters with promisified table", (done) => {
+          const promisifiedTable = new PromisifiedTable({
+            schema: tableSchema,
+            itemConstructor: TestTableItem,
+          });
+          const id = getUniqueId();
+          const rec = new TestTableItem({
+            hashKey: id,
+            rangeKey: "2",
+            foo: "abc",
+            personalInformation: {
+              firstName: "John",
+            },
+          });
+          async.series(
+            [
+              (next) => {
+                rec.create(next);
+              },
+              (next) => {
+                promisifiedTable
+                  .get(
+                    {
+                      hashKey: id,
+                      rangeKey: "2",
+                    },
+                    {
+                      AttributesToGet: ["personalInformation"],
+                    }
+                  )
+                  .then((retrievedItem) => {
+                    expect(getSpy.args[0][0].TableName).to.equal(tableName);
+                    expect(retrievedItem.get()).to.deep.equal({
+                      personalInformation: {
+                        firstName: "John",
+                      },
+                    });
+                    next();
+                  });
+              },
+            ],
+            done
+          );
+        });
+        it("get using no extra parameters with promisified table", (done) => {
+          const promisifiedTable = new PromisifiedTable({
+            schema: tableSchema,
+            itemConstructor: TestTableItem,
+          });
+          const id = getUniqueId();
+          const rec = new TestTableItem({
+            hashKey: id,
+            rangeKey: "2",
+            foo: "abc",
+            personalInformation: {
+              firstName: "John",
+            },
+          });
+          async.series(
+            [
+              (next) => {
+                rec.create(next);
+              },
+              (next) => {
+                promisifiedTable
+                  .get({
+                    hashKey: id,
+                    rangeKey: "2",
+                  })
+                  .then((retrievedItem) => {
+                    expect(getSpy.args[0][0].TableName).to.equal(tableName);
+                    expect(retrievedItem.get()).to.deep.equal({
+                      hashKey: id,
+                      rangeKey: "2",
+                      foo: "abc",
+                      personalInformation: {
+                        firstName: "John",
+                      },
+                    });
+                    next();
+                  });
+              },
+            ],
+            done
+          );
         });
     });
 });

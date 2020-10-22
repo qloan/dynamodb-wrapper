@@ -16,7 +16,7 @@
     "async": "2.0.1",
     "aws-sdk": "2.382.0",
     "joi": "9.0.4",
-    "lodash": "4.17.11"
+    "lodash": "4.17.19"
   },
   "bugs": {
     "url": "https://github.com/qloan/dynamodb-wrapper/issues"
@@ -26,7 +26,7 @@
     "chai": "3.5.0",
     "chai-spies": "0.7.1",
     "mocha": "3.1.0",
-    "sinon": "1.17.6",
+    "sinon": "9.2.0",
     "proxyquire": "^2.1.0"
   }
 }
