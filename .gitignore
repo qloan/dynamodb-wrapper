@@ -6,4 +6,7 @@ test-report.xml
 /nbproject/
 doc/
 *.idea
+
+# Commit no lockfiles for legacy repos
+package-lock.json
 yarn.lock
