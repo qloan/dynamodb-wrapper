@@ -161,7 +161,7 @@ describe('Table: integration', function() {
                 }
             });
             rec.create((err) => {
-                assert(!err, JSON.stringify(err));
+                expect(err).to.be.falsy;
                 S3.listObjects({
                     Bucket: "rl-nonprod-dynamo-backups",
                     Prefix: `${tableName}/hashKey:${hashKey}/rangeKey:${rangeKey}/create-`

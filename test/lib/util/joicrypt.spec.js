@@ -8,7 +8,7 @@ const arr = joi.array();
 const str = joi.string();
 const num = joi.number();
 
-const schema = obj.keys({
+const schema = joi.decorateSchema(obj.keys({
     loanId : str.required(),
     foo    : str.required(),
     personalInformation : obj.keys({
@@ -23,7 +23,7 @@ const schema = obj.keys({
         field3 : str.compress(),
         field4 : str.compress().encrypt()
     }))
-});
+}));
 
 describe('JoiCrypt', () => {
 
@@ -31,7 +31,7 @@ describe('JoiCrypt', () => {
         const obj = {
                 loanId: '12345'
         };
-        const result = joi.validate(obj, schema);
+        const result = schema.validate(obj);
         expect(result.error.name).to.equal('ValidationError');
         done();
     });
@@ -48,8 +48,8 @@ describe('JoiCrypt', () => {
                 field2: 21
             }]
         };
-        const result = joi.validate(obj, schema);
-        expect(result.error).to.be.null;
+        const result = schema.validate(obj);
+        expect(result.error).to.be.falsy;
         done();
     });
 
@@ -67,7 +67,7 @@ describe('JoiCrypt', () => {
                 field4: 'yet another test'
             }]
         };
-        const result = joi.validate(obj, schema);
+        const result = schema.validate(obj);
         expect(result.encryptedFields).to.deep.equal([
             'arrFields.0.field2',
             'arrFields.1.field2',
@@ -99,7 +99,7 @@ describe('JoiCrypt', () => {
                 field2: 88
             }]
         };
-        const result = joi.validate(obj, schema);
+        const result = schema.validate(obj);
         expect(result.encryptedFields).to.deep.equal([
             'personalInformation.firstName',
             'personalInformation.lastName',
@@ -135,11 +135,11 @@ describe('JoiCrypt', () => {
             }]
         };
 
-        let result = joi.validate(obj, schema);
+        let result = schema.validate(obj);
         expect(result.error.name).to.equal('ValidationError');
         expect(result.encryptedFields).to.deep.equal([]);
 
-        result = joi.validate(obj, schema, {abortEarly: false});
+        result = schema.validate(obj, {abortEarly: false});
         expect(result.error.name).to.equal('ValidationError');
         expect(result.encryptedFields).to.deep.equal([
             'personalInformation.firstName',
