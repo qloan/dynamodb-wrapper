@@ -1,6 +1,6 @@
 const util = require("lib/util/util");
 const {assert, expect} = require("chai");
-const joi = require("joi");
+const joi = require('joi');
 
 describe("Util::", function() {
     describe("Get Extended Timestamp", function() {

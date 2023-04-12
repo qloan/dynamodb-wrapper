@@ -15,7 +15,7 @@
   "dependencies": {
     "async": "2.0.1",
     "aws-sdk": "2.382.0",
-    "joi": "9.0.4",
+    "joi": "^17",
     "lodash": "4.17.19"
   },
   "bugs": {
