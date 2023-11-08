@@ -22,7 +22,8 @@ const schema = obj.keys({
         field2 : num.encrypt(),
         field3 : str.compress(),
         field4 : str.compress().encrypt()
-    }))
+    })),
+    arrComp : arr.items(str).compress()
 });
 
 describe('JoiCrypt', () => {
@@ -154,6 +155,22 @@ describe('JoiCrypt', () => {
             'personalInformation.ssn',
             'arrFields.0.field3',
             'arrFields.1.field4',
+        ]);
+        done();
+    });
+
+    it('should be able to identify compressed fields even if there is an error, search note: NOTE_IGNORE_ERROR_ENCRYPT_COMPRESSED', (done) => {
+        const obj = {
+            loanId : '12345',
+            foo    : 'test',
+            arrFields: [],
+            arrComp: Buffer.from('asd')
+        };
+
+        const result = joi.validate(obj, schema, {abortEarly: false}); 
+        assert(result.error, 'There SHOULD be an error, but compressedFields should be populated anyway');
+        expect(result.compressedFields).to.deep.equal([
+            'arrComp'
         ]);
         done();
     });
