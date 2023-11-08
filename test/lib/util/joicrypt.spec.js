@@ -49,7 +49,7 @@ describe('JoiCrypt', () => {
             }]
         };
         const result = joi.validate(obj, schema);
-        expect(result.error).to.be.null;
+        assert(!result.error, 'There should not be an error');
         done();
     });
 
