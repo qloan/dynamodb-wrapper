@@ -13,9 +13,9 @@ const schema = obj.keys({
     foo    : str.required(),
     personalInformation : obj.keys({
         firstName  : str.required().encrypt(),
-        middleName : str.compress(),
+        middleName : str,
         lastName   : str.encrypt(),
-        ssn        : str.compress().encrypt()
+        ssn        : joi.custom(joi.useCompressedEncryption(str)),
     }),
     arrFields : arr.required().items(obj.keys({
         field1 : num,
@@ -23,7 +23,9 @@ const schema = obj.keys({
         field3 : str.compress(),
         field4 : str.compress().encrypt()
     })),
-    arrComp : arr.items(str).compress()
+    arrComp : joi.custom(
+        joi.useCompression(joi.array().items(joi.string()))
+    )
 });
 
 describe('JoiCrypt', () => {
@@ -109,7 +111,6 @@ describe('JoiCrypt', () => {
             'arrFields.1.field2'
         ]);
         expect(result.compressedFields).to.deep.equal([
-            'personalInformation.middleName',
             'personalInformation.ssn'
         ]);
         done();
@@ -151,7 +152,6 @@ describe('JoiCrypt', () => {
             'arrFields.1.field4'
         ]);
         expect(result.compressedFields).to.deep.equal([
-            'personalInformation.middleName',
             'personalInformation.ssn',
             'arrFields.0.field3',
             'arrFields.1.field4',
@@ -159,7 +159,8 @@ describe('JoiCrypt', () => {
         done();
     });
 
-    it('should be able to identify compressed fields even if there is an error, search note: NOTE_IGNORE_ERROR_ENCRYPT_COMPRESSED', (done) => {
+    // search note: NOTE_IGNORE_ERROR_ENCRYPT_COMPRESSED
+    it('Should not throw an error if validating a buffer, but should recognize compressed field', (done) => {
         const obj = {
             loanId : '12345',
             foo    : 'test',
@@ -168,9 +169,66 @@ describe('JoiCrypt', () => {
         };
 
         const result = joi.validate(obj, schema, {abortEarly: false}); 
-        assert(result.error, 'There SHOULD be an error, but compressedFields should be populated anyway');
+        assert(!result.error, 'Should not throw an error');
+        expect(result.compressedFields).to.deep.equal([ 'arrComp' ]);
+        done();
+    });
+    it('Should throw an error if validating something that doesnt match the schema which isnt a buffer', (done) => {
+        const obj = {
+            loanId : '12345',
+            foo    : 'test',
+            arrFields: [],
+            arrComp: [1]
+        };
+
+        const result = joi.validate(obj, schema, {abortEarly: false}); 
+        assert(result.error, 'Should throw an error');
+        done();
+    });
+    it('If validating something that matches the schema, should not throw an error and should record the compressed field', (done) => {
+        const obj = {
+            loanId : '12345',
+            foo    : 'test',
+            arrFields: [],
+            arrComp: ['a']
+        };
+
+        const result = joi.validate(obj, schema, {abortEarly: false}); 
+        assert(!result.error, 'Should not throw an error');
+        expect(result.compressedFields).to.deep.equal([ 'arrComp' ]);
+        done();
+    });
+    it('If the field isnt present, shouldnt be considered a compressed field', (done) => {
+        const obj = {
+            loanId : '12345',
+            foo    : 'test',
+            arrFields: []
+        };
+
+        const result = joi.validate(obj, schema, {abortEarly: false}); 
+        assert(!result.error, 'Should not throw an error');
+        expect(result.compressedFields).to.deep.equal([]);
+        done();
+    });
+    it('t again', (done) => {
+        const obj = {
+            loanId : '12345',
+            foo    : 'test',
+            arrFields: [],
+            personalInformation : {
+                firstName  : 'a',
+                ssn        : 'd'
+            },
+        };
+
+        const result = joi.validate(obj, schema, {abortEarly: false}); 
+        assert(!result.error, 'Should not throw an error');
         expect(result.compressedFields).to.deep.equal([
-            'arrComp'
+            'personalInformation.ssn',
+        ]);
+        expect(result.encryptedFields).to.deep.equal([
+            'personalInformation.firstName',
+            'personalInformation.ssn',
         ]);
         done();
     });
