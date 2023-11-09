@@ -15,17 +15,15 @@ const schema = obj.keys({
         firstName  : str.required().encrypt(),
         middleName : str,
         lastName   : str.encrypt(),
-        ssn        : joi.custom(joi.useCompressedEncryption(str)),
+        ssn        : joi.useCompression(str.required().encrypt()),
     }),
     arrFields : arr.required().items(obj.keys({
         field1 : num,
         field2 : num.encrypt(),
-        field3 : str.compress(),
-        field4 : str.compress().encrypt()
+        field3 : str,
+        field4 : str.encrypt()
     })),
-    arrComp : joi.custom(
-        joi.useCompression(joi.array().items(joi.string()))
-    )
+    arrComp : joi.useCompression(joi.array().items(joi.string()))
 });
 
 describe('JoiCrypt', () => {
