@@ -20,13 +20,15 @@ const schema = obj.keys({
     arrFields : arr.required().items(obj.keys({
         field1 : num,
         field2 : num.encrypt(),
-        field3 : str.compress(),
-        field4 : str.compress().encrypt()
+        field3 : joi.useCompression(str),
+        field4 : joi.useCompression(str).encrypt()
     })),
     arrComp : joi.custom(
         joi.useCompression(joi.array().items(joi.string()))
     )
 });
+
+// npm run testGrep "JoiCrypt"
 
 describe('JoiCrypt', () => {
 
