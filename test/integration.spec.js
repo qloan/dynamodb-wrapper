@@ -102,8 +102,8 @@ describe('Table: integration', function() {
                 hashKey : joi.string().required(),
                 rangeKey : joi.string().optional(),
                 personalInformation : joi.object().keys({
-                    firstName : joi.string().encrypt(),
-                    lastName  : joi.string().encrypt(),
+                    firstName : joi.useEncryption(joi.string()),
+                    lastName  : joi.useEncryption(joi.string()),
                     "0-0"     : joi.optional(),
                     "."     : joi.optional()
                 }),
@@ -715,8 +715,8 @@ describe('Table: integration', function() {
                     hashKey : joi.string().required(),
                     rangeKey : joi.string().optional(),
                     personalInformation : joi.object().keys({
-                        firstName : joi.string().encrypt(),
-                        lastName  : joi.string().encrypt(),
+                        firstName : joi.useEncryption(joi.string()),
+                        lastName  : joi.useEncryption(joi.string()),
                         "0-0"     : joi.optional(),
                         "."     : joi.optional()
                     }),
@@ -788,8 +788,8 @@ describe('Table: integration', function() {
                     hashKey : joi.string().required(),
                     rangeKey : joi.string().optional(),
                     personalInformation : joi.object().keys({
-                        firstName : joi.string().encrypt(),
-                        lastName  : joi.string().encrypt(),
+                        firstName : joi.useEncryption(joi.string()),
+                        lastName  : joi.useEncryption(joi.string()),
                         "0-0"     : joi.optional(),
                         "."     : joi.optional()
                     }),
@@ -938,8 +938,8 @@ describe('Table: integration', function() {
                     hashKey : joi.string().required(),
                     rangeKey : joi.string().optional(),
                     personalInformation : joi.object().keys({
-                        firstName : joi.string().encrypt(),
-                        lastName  : joi.string().encrypt(),
+                        firstName : joi.useEncryption(joi.string()),
+                        lastName  : joi.useEncryption(joi.string()),
                         "0-0"     : joi.optional(),
                         "."     : joi.optional()
                     }),
@@ -1021,8 +1021,8 @@ describe('Table: integration', function() {
                     hashKey : joi.string().required(),
                     rangeKey : joi.string().optional(),
                     personalInformation : joi.object().keys({
-                        firstName : joi.string().encrypt(),
-                        lastName  : joi.string().encrypt(),
+                        firstName : joi.useEncryption(joi.string()),
+                        lastName  : joi.useEncryption(joi.string()),
                         "0-0"     : joi.optional(),
                         "."     : joi.optional()
                     }),
