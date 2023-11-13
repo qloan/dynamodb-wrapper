@@ -3,6 +3,8 @@ const chai   = require('chai');
 const expect = chai.expect;
 const assert = chai.assert;
 
+// npm run testGrep "JoiCrypt"
+
 describe('JoiCrypt', () => {
     it('Should be able to detect encrypted fields', () => {
         const schema = joi.object().keys({

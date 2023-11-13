@@ -14,8 +14,8 @@ var schema = new LoanSchema({
     schema: {
         loanId : joi.string().required(),
         personalInformation : joi.object().keys({
-            firstName : joi.string().encrypt(),
-            lastName  : joi.string().encrypt()
+            firstName : joi.useEncryption(joi.string()),
+            lastName  : joi.useEncryption(joi.string())
         }),
         foo    : joi.string().required()
     },
