@@ -1,6 +1,6 @@
 {
   "name": "dynamodb-wrapper",
-  "version": "0.3.13",
+  "version": "0.4.1",
   "description": "A lightweight wrapper around the DynamoDB DocumentClient class.",
   "main": "lib/index.js",
   "scripts": {
