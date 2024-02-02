@@ -81,6 +81,23 @@ describe('Item::', function() {
                     return done();
                 });
             });
+            it("Should be able to specify createdAt directly", function(done) {
+                const createdAt = new Date(2020,2,1).toISOString();
+                let rec = new TestTableItem({
+                    hashKey  : "1",
+                    rangeKey : "2",
+                    foo : "abc",
+                    personalInformation: {
+                        firstName: 'John'
+                    },
+                    createdAt
+                });
+                rec.create((err) => {
+                    assert(!err, JSON.stringify(err));
+                    expect(rec.get('createdAt')).to.equal(createdAt);
+                    return done();
+                });
+            });
             it(`Should be able to use extended timestamp versions`, function(done) {
                 let rec = new TestTableItem({
                     hashKey  : "1",
