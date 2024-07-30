@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "export NODE_PATH=$NODE_PATH:`pwd`; mocha --recursive test/**",
-    "testGrep": "NODE_PATH=./ n exec 18 mocha --recursive -g"
+    "testGrep": "NODE_PATH=./ mocha --recursive -g"
   },
   "repository": {
     "type": "git",
